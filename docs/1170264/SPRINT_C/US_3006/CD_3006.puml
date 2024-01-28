@@ -1,0 +1,74 @@
+@startuml
+
+class CreatePostItUI <<UI>> {
+}
+
+class ShareSharedBoardController <<Controller>> {
+    + String: chooseSharedBoard(message, List<String> sharedBoardList)
+    + List<String> extractList(response)
+}
+
+class CreatePostItController <<Controller>> {
+    + boolean listSharedBoards (user)
+    + boolean listCells (sharedBoardName)
+    + String: chooseCell(message, List<String> cellList)
+    + List<String> extractList(response)
+    + List<String> extractCellList(response)
+    + boolean createPostIt(user, content, cell)
+}
+
+class TcpServerMessageHandler {
+     +void: findSharedBoardsOfUser(version, data, out)
+     +void: findFreeCells(version, data, out);
+     +createPostIt(version, data, out);
+}
+
+
+class UserRepository <<Repository>> {
+    + void: findById(user)
+}
+
+class SharedBoardRepository <<Repository>>{
+    + List<SharedBoard> findSharedBoardOfUser(user)
+    + List<SharedBoard> findSharedBoardsAvailableForUser(user)
+}
+
+class CellRepoitory <<Repository>>{
+    + void: save(cell)
+    + void: finCell(rowTitle, columnTitle)
+}
+
+class Cell <<Entity>>{
+    String: cellID
+    int: rowNumber
+    int: columnNumber
+
+    +void: changeTheFreeStatus(isFree)
+}
+
+class PostItRepository <<Repository>>{
+    + void: save(postIt)
+}
+
+class PostItBuilder <<builder>>{
+    +withOwner(user)
+    +withContent(content)
+    +withCell(cell)
+    +build()
+}
+
+
+
+CreatePostItUI ..> CreatePostItController
+CreatePostItController..>ShareSharedBoardController
+CreatePostItController ..> TcpServerMessageHandler
+
+TcpServerMessageHandler ..> UserRepository
+TcpServerMessageHandler ..> SharedBoardRepository
+TcpServerMessageHandler..>CellRepoitory
+TcpServerMessageHandler..>PostItRepository
+TcpServerMessageHandler..>PostItBuilder
+CellRepoitory-->Cell : has >
+
+
+@enduml

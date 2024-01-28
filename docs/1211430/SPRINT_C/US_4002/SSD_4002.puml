@@ -1,0 +1,20 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor User as User
+activate User
+User -> System: Wants to cancel meeting
+activate System
+System --> User : Shows all meetings of the user
+deactivate System
+User -> System: Choose a meeting to cancel
+activate System
+System-->User: shows operations success
+deactivate System
+
+@enduml

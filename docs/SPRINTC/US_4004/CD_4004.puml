@@ -1,0 +1,25 @@
+@startuml
+
+class ViewMeetingInvitesUI <<UI>> {
+}
+
+class ViewMeetingInvitesController <<Controller>> {
+    + Iterable<Meeting>: listMeetingsOfUser(user)
+    + Iterable<Meeting>: listMeetingInvitation(meeting)
+    + Iterable<MeetingInvitation>: listMeetingWhereUserIs(user)
+}
+
+class MeetingRepository <<Repository>> {
+    + Iterable<Meeting>: findMeetingsNotCanceledOfUser(user)
+}
+
+class MeetingInvitationRepository <<Repository>> {
+    + Iterable<MeetingInvitation>: findByIdAndWithAcceptedAndRejectedStatus(meeting)
+}
+
+ViewMeetingInvitesUI ..> ViewMeetingInvitesController
+ViewMeetingInvitesController ..> MeetingInvitationRepository
+ViewMeetingInvitesController ..> MeetingRepository
+
+
+@enduml

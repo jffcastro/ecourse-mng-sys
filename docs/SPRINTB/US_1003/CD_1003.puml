@@ -1,0 +1,51 @@
+@startuml
+
+class ChangeEnrollmentsStatusUI <<UI>> {
+}
+
+class ChangeEnrollmentsStatusController <<Controller>> {
+    + Iterable<Course>: listOpenCourses()
+    + Iterable<Course> listEnrollCourses()
+    + boolean: validateDate(course, endDateEnroll)
+    + void: openEnrollments(course, endDateEnroll)
+    + void: closeEnrollments(course)
+}
+
+class CourseRepository <<Repository>> {
+    + Iterable<Course> findCourseWithOpenStatus()
+    + Iterable<Course> findCourseWithEnrollStatus()
+    + void: save(course)
+}
+
+class Course <<Entity>> {
+        - String: courseCode
+        - String: description
+        - Integer: minStudents
+        - Integer: maxStudents
+        - Teacher: teacherInCharge
+        - Date: openCourseDate
+        - Date: closeCourseDate
+        - Date: openEnrollmentsDate
+        - Date: closeEnrollmentsDate
+        + void: openEnrollments(endDateEnroll)
+        + void: closeEnrollments()
+}
+
+class CourseName <<Value Object>> {
+    String: courseName
+}
+
+enum CourseStatus {
+        CLOSE
+        OPEN
+        ENROLL
+        IN_PROGRESS
+}
+
+ChangeEnrollmentsStatusUI ..> ChangeEnrollmentsStatusController
+ChangeEnrollmentsStatusController ..> CourseRepository
+CourseRepository --> Course : saves >
+Course ---* CourseName
+Course "1" ---> "1" CourseStatus
+
+@enduml

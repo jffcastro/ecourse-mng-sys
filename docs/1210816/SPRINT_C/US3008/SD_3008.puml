@@ -1,0 +1,134 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+autonumber
+
+actor User as Actor
+participant UndoPostItUI as UI <<presentation>>
+control UndoPostItController as CTRL <<application>>
+participant TcpServerMessageHandler as TcpServerMessageHandler
+participant UserRepository as UserRepository
+participant SharedBoardRepository as SharedBoardRepository
+participant PostItRepository as PostItRepository
+participant CellRepository as CellRepository
+participant Cell as Cell
+participant PostItHistoryBuilder as PostItHistoryBuilder
+participant PostItHistoryRepository as PostItHistoryRepository
+participant PostIt as PostIt
+
+activate Actor
+    Actor->UI: wants to undo a post-it
+    activate UI
+    UI->CTRL: listSharedBoards(SharedBoardClient.userName)
+    activate CTRL
+note right of CTRL: request is created with the \nclass RequestMessage using \ncode SHAREDBOARDS_CREATE_INVITE(8)\n pass by parameter user
+         CTRL -> TcpServerMessageHandler: send(request)
+
+         activate TcpServerMessageHandler
+         TcpServerMessageHandler -> UserRepository: user = findById(username)
+         activate UserRepository
+             UserRepository --> TcpServerMessageHandler: returns SystemUser
+         deactivate UserRepository
+         TcpServerMessageHandler -> SharedBoardRepository : sharedBoardListInvited = findSharedBoardsAvailableForUser(user)
+         activate SharedBoardRepository
+         SharedBoardRepository-->TcpServerMessageHandler: returns List<SharedBoard>
+         deactivate SharedBoardRepository
+         TcpServerMessageHandler -> SharedBoardRepository: availableSharedBoards = findSharedBoardsOfUser(user)
+         activate SharedBoardRepository
+             SharedBoardRepository --> TcpServerMessageHandler: returns List<SharedBoard>
+         deactivate SharedBoardRepository
+             alt if(!availableSharedBoards.isEmpty)
+              TcpServerMessageHandler-->TcpServerMessageHandler : addAll(sharedBoardListInvitated)
+                 alt for (SharedBoard list : availableSharedBoards)
+
+                 TcpServerMessageHandler -> TcpServerMessageHandler: sharedBoards += list.title()
+                 end
+             end
+         deactivate SharedBoardRepository
+
+
+         note right of CTRL: response is created with the \nclass RequestMessage using \ncode SEND_MESSAGE(6) pass \nby parameter String \navailableSharedBoards
+
+         TcpServerMessageHandler --> CTRL: send(response)
+         deactivate CTRL
+         deactivate TcpServerMessageHandler
+         CTRL --> UI: returns String sharedBoardList
+
+     UI --> Actor: Asks to choose a shared board
+     Actor -> UI: Selects a shared board
+     UI->CTRL: listPostIts(userName, sharedBoard)
+     activate CTRL
+
+     note right of CTRL: request is created with the \nclass RequestMessage using \ncode LIST_POSTITS(14)\n pass by parameter userName and sharedBoardName
+     CTRL-> TcpServerMessageHandler: send(request)
+     activate TcpServerMessageHandler
+      TcpServerMessageHandler -> UserRepository: user = findById(username)
+      activate UserRepository
+          UserRepository --> TcpServerMessageHandler: returns SystemUser
+      deactivate UserRepository
+     TcpServerMessageHandler-> SharedBoardRepository : findSharedBoard(sharedBoardTitle)
+     activate SharedBoardRepository
+     SharedBoardRepository-->TcpServerMessageHandler: returns sharedBoard
+     deactivate SharedBoardRepository
+     TcpServerMessageHandler->PostItRepository: findPostItsFromSharedBoard(sharedBoard, user)
+     activate PostItRepository
+     PostItRepository-->TcpServerMessageHandler: returns postItsList
+     deactivate PostItRepository
+     alt if(!postItsList.isEmpty)
+                      alt for (PostIt list : postItsList)
+                      TcpServerMessageHandler -> TcpServerMessageHandler: postIt += list + " \ n"
+                      end
+                  end
+                  note right of CTRL: response is created with the \nclass RequestMessage using \ncode SEND_MESSAGE(6) pass \nby parameter String \ncellsAvailable
+     TcpServerMessageHandler--> CTRL: send(response)
+     deactivate TcpServerMessageHandler
+CTRL-->UI: returns String postItsList
+     deactivate CTRL
+UI-->Actor: Asks to select a postIt to undo
+Actor->UI: Selects postIt
+UI->CTRL: undoPostIt(postIt)
+activate CTRL
+note right of CTRL: request is created with the \nclass RequestMessage using \ncode UNDO_POSTIT(17)\n pass by parameter postIt
+CTRL-> TcpServerMessageHandler: send(request)
+activate TcpServerMessageHandler
+TcpServerMessageHandler -> UserRepository: user = findById(username)
+      activate UserRepository
+          UserRepository --> TcpServerMessageHandler: returns SystemUser
+        deactivate UserRepository
+        TcpServerMessageHandler -> PostItRepository: findPostItFromUserAndContentAndCell(username, content, row, column)
+        activate PostItRepository
+        PostItRepository --> TcpServerMessageHandler: returns postIt
+        deactivate PostItRepository
+        alt if(postIt != null)
+        TcpServerMessageHandler -> PostItHistoryRepository: findLastChangeOfPostIt(postIt)
+        activate PostItHistoryRepository
+        PostItHistoryRepository --> TcpServerMessageHandler: returns postItHistory
+        deactivate PostItHistoryRepository
+        TcpServerMessageHandler -> PostIt: changeContent(lastPostItHistory.getOldDescription())
+        activate PostIt
+        TcpServerMessageHandler --> PostIt: changeCell(lastPostItHistory.getOldCell())
+        deactivate PostIt
+        TcpServerMessageHandler -> PostItRepository: save(postIt)
+        activate PostItRepository
+        PostItRepository --> TcpServerMessageHandler: returns postIt
+        deactivate PostItRepository
+        end
+        note right of CTRL: response is created with the \nclass RequestMessage using \ncode ACK(2) if success and \nERR(3) if error
+        TcpServerMessageHandler--> CTRL: send(response)
+        deactivate TcpServerMessageHandler
+        CTRL-->UI: send(response)
+        deactivate CTRL
+UI-->Actor: Shows if operation was successful
+
+
+
+
+
+
+deactivate Actor
+
+@enduml

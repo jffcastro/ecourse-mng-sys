@@ -1,0 +1,96 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+autonumber
+
+actor User as Actor
+participant ArchiveSharedBoardUI as UI <<presentation>>
+control ArchiveSharedBoardController as CTRL <<application>>
+participant TcpServerMessageHandler as TcpServerMessageHandler
+participant UserRepository as UserRepository
+participant SharedBoardRepository as SharedBoardRepository
+participant PostItRepository as PostItRepository
+participant CellRepository as CellRepository
+participant Cell as Cell
+participant PostItHistoryBuilder as PostItHistoryBuilder
+participant PostItHistoryRepository as PostItHistoryRepository
+participant PostIt as PostIt
+
+activate Actor
+    Actor->UI: wants to archive a shared board
+    activate UI
+    UI->CTRL: listSharedBoards(SharedBoardClient.userName)
+    activate CTRL
+note right of CTRL: request is created with the \nclass RequestMessage using \ncode SHARED_BOARD_OWNER(21)\n pass by parameter user
+         CTRL -> TcpServerMessageHandler: send(request)
+
+         activate TcpServerMessageHandler
+         TcpServerMessageHandler -> UserRepository: user = findById(username)
+         activate UserRepository
+             UserRepository --> TcpServerMessageHandler: returns SystemUser
+         deactivate UserRepository
+
+         TcpServerMessageHandler -> SharedBoardRepository: availableSharedBoards = findSharedBoardsOfUser(user)
+         activate SharedBoardRepository
+             SharedBoardRepository --> TcpServerMessageHandler: returns List<SharedBoard>
+         deactivate SharedBoardRepository
+             alt if(!availableSharedBoards.isEmpty)
+
+                 alt for (SharedBoard list : availableSharedBoards)
+
+                 TcpServerMessageHandler -> TcpServerMessageHandler: sharedBoards += list.title()
+                 end
+             end
+         deactivate SharedBoardRepository
+
+
+         note right of CTRL: response is created with the \nclass RequestMessage using \ncode SEND_MESSAGE(6) pass \nby parameter String \navailableSharedBoards
+
+         TcpServerMessageHandler --> CTRL: send(response)
+
+         deactivate TcpServerMessageHandler
+         CTRL --> UI: returns String sharedBoardList
+         deactivate CTRL
+
+     UI --> Actor: Asks to choose a shared board
+     Actor -> UI: Selects a shared board
+        UI -> CTRL: archiveSharedBoard(SharedBoardClient.userName, SharedBoardClient.sharedBoard)
+        activate CTRL
+        note right of CTRL: request is created with the \nclass RequestMessage using \ncode ARCHIVE_SHAREDBOARD(18)\n pass by parameter user and \nsharedBoard
+
+        CTRL -> TcpServerMessageHandler: send(request)
+        activate TcpServerMessageHandler
+        TcpServerMessageHandler -> UserRepository: user = findById(username)
+        activate UserRepository
+            UserRepository --> TcpServerMessageHandler: returns SystemUser
+        deactivate UserRepository
+        TcpServerMessageHandler -> SharedBoardRepository: sharedBoard = findSharedBoard(sharedBoardTitle)
+        activate SharedBoardRepository
+            SharedBoardRepository --> TcpServerMessageHandler: returns SharedBoard
+        deactivate SharedBoardRepository
+        alt if user and sharedBoard != null
+        TcpServerMessageHandler -> SharedBoard: sharedBoard.setStatus(SharedBoardStatus.ARCHIVED)
+        TcpServerMessageHandler -> SharedBoardRepository: save(sharedBoard)
+        activate SharedBoardRepository
+            SharedBoardRepository --> TcpServerMessageHandler: returns SharedBoard
+        deactivate SharedBoardRepository
+        end
+        note right of CTRL: response is created with the \nclass RequestMessage using \ncode ACK(2) if success and \nERR(3) if error
+                TcpServerMessageHandler--> CTRL: send(response)
+                deactivate TcpServerMessageHandler
+                CTRL-->UI: send(response)
+                deactivate CTRL
+        UI-->Actor: Shows if operation was successful
+
+
+
+
+
+
+deactivate Actor
+
+@enduml

@@ -1,0 +1,125 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor Teacher as Actor
+participant CreateUpdateQuestionUI as UI <<presentation>>
+
+Actor -> UI : asks to create/update a question
+activate UI
+    create control CreateUpdateQuestionController
+    UI -> CreateUpdateQuestionController: create()
+
+    control CreateUpdateQuestionService as Service <<application>>
+    database QuestionRepository as QuestionRepository <<repository>>
+    control EvalVisitor as EvalVisitor <<visitor>>
+
+    UI --> Actor : asks to select one option (create/update)
+    Actor -> UI : chooses option
+    alt if option is create question
+        UI --> Actor : asks to insert file path
+        Actor -> UI : inserts file path
+        UI -> CreateUpdateQuestionController : importFile(path)
+        activate CreateUpdateQuestionController
+            CreateUpdateQuestionController -> Service : importFile(path)
+            activate Service
+                Service --> CreateUpdateQuestionController : file imported
+            deactivate Service
+            CreateUpdateQuestionController --> UI : file imported
+        deactivate CreateUpdateQuestionController
+        alt if file is not null
+            UI -> CreateUpdateQuestionController : createQuestion(file)
+            activate CreateUpdateQuestionController
+                CreateUpdateQuestionController -> Service : createQuestion(file)
+                activate Service
+                    Service -> EvalVisitor : buildQuestion(ParseTree tree)
+                    activate EvalVisitor
+                        note right of EvalVisitor : this is the part related to ANTLR
+                        create participant QuestionBuilder as QuestionBuilder <<factory>>
+                        EvalVisitor -> QuestionBuilder : create()
+                        EvalVisitor -> QuestionBuilder : ofGroup(group)
+                        EvalVisitor -> QuestionBuilder : withStructure(structure)
+                        EvalVisitor -> QuestionBuilder : withQuotation(quotation)
+                        EvalVisitor -> QuestionBuilder : build()
+
+                        activate QuestionBuilder
+                            QuestionBuilder --> EvalVisitor : question created
+                        deactivate QuestionBuilder
+                        EvalVisitor --> Service : question generated
+                    deactivate EvalVisitor
+                    alt if question is not null and !questionRepository.existsByStructure(question.structure())
+                        Service -> QuestionRepository : save(question)
+                    end
+                    Service --> CreateUpdateQuestionController : question generated
+                deactivate Service
+                CreateUpdateQuestionController --> UI : question generated
+            deactivate CreateUpdateQuestionController
+            alt if question is not null
+                UI --> Actor : shows the question created
+            else if question is null
+                UI --> Actor : informs about question not being valid
+            end
+        else if file is null
+                UI --> Actor : informs about file not being valid
+        end
+    else if option is update question
+        UI -> CreateUpdateQuestionController : findAllQuestions()
+        activate CreateUpdateQuestionController
+            CreateUpdateQuestionController -> QuestionRepository : findAll()
+            activate QuestionRepository
+            QuestionRepository --> CreateUpdateQuestionController
+            deactivate QuestionRepository
+            CreateUpdateQuestionController --> UI
+        deactivate CreateUpdateQuestionController
+        Actor <-- UI : shows avaliable question list\nasks to choose question to update
+        Actor -> UI : chooses question to update
+        UI -> CreateUpdateQuestionController : importFile(path)
+        activate CreateUpdateQuestionController
+            CreateUpdateQuestionController -> Service : importFile(path)
+            activate Service
+                Service --> CreateUpdateQuestionController : file imported
+            deactivate Service
+            CreateUpdateQuestionController --> UI : file imported
+        deactivate CreateUpdateQuestionController
+        alt if file is not null
+            UI -> CreateUpdateQuestionController : updateQuestion(question, file)
+            activate CreateUpdateQuestionController
+                CreateUpdateQuestionController -> Service : updateQuestion(question, file)
+                activate Service
+                    Service -> EvalVisitor : buildQuestion(ParseTree tree)
+                    activate EvalVisitor
+                        note right of EvalVisitor : this is the part related to ANTLR
+                        EvalVisitor -> QuestionBuilder : create()
+                        EvalVisitor -> QuestionBuilder : ofGroup(group)
+                        EvalVisitor -> QuestionBuilder : withStructure(structure)
+                        EvalVisitor -> QuestionBuilder : withQuotation(quotation)
+                        EvalVisitor -> QuestionBuilder : build()
+
+                        activate QuestionBuilder
+                            QuestionBuilder --> EvalVisitor : question created
+                        deactivate QuestionBuilder
+                        EvalVisitor --> Service : question generated
+                    deactivate EvalVisitor
+                    alt if question is not null
+                        Service -> QuestionRepository : delete(question)
+                        Service -> QuestionRepository : save(question)
+                    end
+                    Service --> CreateUpdateQuestionController : new question generated
+                deactivate Service
+                CreateUpdateQuestionController --> UI : new question generated
+            deactivate CreateUpdateQuestionController
+            alt if new question is not null
+                UI --> Actor : shows the new question created
+            else if new question is null
+                UI --> Actor : informs about new question not being valid
+            end
+        else if file is null
+            UI --> Actor : informs about file not being valid
+        end
+    end
+deactivate UI
+@enduml

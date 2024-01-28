@@ -1,0 +1,22 @@
+@startuml
+'https://plantuml.com/use-case-diagram
+
+left to right direction
+
+:Manager: as Manager
+(FRC01 - Create Course) as (CC)
+(FRC02 - Open/Close Enrollments in Course) as (OCRC)
+(FRC03 - Open/Close Course) as (OCC)
+(FRC04 - Set Course Teachers) as (SCT)
+(FRC06 - Bulk Enroll Students in Course) as (ESC)
+(FRC08 - Approve/Reject Enlistment in Course) as (AREC)
+
+Manager --> (CC)
+Manager --> (OCRC)
+Manager --> (OCC)
+Manager --> (SCT)
+Manager --> (ESC)
+Manager --> (AREC)
+
+
+@enduml

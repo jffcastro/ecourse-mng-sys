@@ -1,0 +1,126 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor User as Actor
+participant ShareSharedBoardUI as UI <<presentation>>
+control ShareSharedBoardController as ShareSharedBoardController <<application>>
+participant TcpServerMessageHandler
+database UserRepository <<repository>>
+database SharedBoardRepository <<repository>>
+database SharedBoardInvitationRepository <<repository>>
+participant SharedBoardInvitationBuilder <<Builder>>
+
+Actor -> UI: Wants to share one of his shared boards
+activate UI
+    UI ->  ShareSharedBoardController **: create()
+    UI -> ShareSharedBoardController: sendRequestToShare(username)
+    activate ShareSharedBoardController
+        note right of ShareSharedBoardController: request is created with the \nclass RequestMessage using \ncode SHAREDBOARD_CREATE(7)\n pass by parameter user
+        ShareSharedBoardController -> TcpServerMessageHandler: send(request)
+        activate TcpServerMessageHandler
+        TcpServerMessageHandler -> UserRepository: user = findById(username)
+        activate UserRepository
+            UserRepository --> TcpServerMessageHandler: returns SystemUser
+        deactivate UserRepository
+        TcpServerMessageHandler -> SharedBoardRepository: availableSharedBoards = findSharedBoardsOfUser(user)
+        activate SharedBoardRepository
+            SharedBoardRepository --> TcpServerMessageHandler: returns List<SharedBoard>
+        deactivate SharedBoardRepository
+            alt if(!availableSharedBoards.isEmpty)
+                alt for (SharedBoard list : availableSharedBoards)
+                TcpServerMessageHandler -> TcpServerMessageHandler: sharedBoards += list.title()
+                end
+            end
+        deactivate SharedBoardRepository
+        note right of ShareSharedBoardController: response is created with the \nclass RequestMessage using \ncode SEND_MESSAGE(6) pass \nby parameter String \navailableSharedBoards
+        TcpServerMessageHandler --> ShareSharedBoardController: send(response)
+        deactivate TcpServerMessageHandler
+        ShareSharedBoardController --> UI: returns String sharedBoardList
+    deactivate ShareSharedBoardController
+    UI --> Actor: Asks to choose one
+    Actor -> UI: Selects one
+    alt while keepAddingUsers == true
+        UI --> Actor: Asks if wants to add more users or if wants to exit
+        Actor -> UI: Selects option
+        alt if option == Share with other users
+            UI -> ShareSharedBoardController: listSharedBoards(user, sharedBoard)
+            activate ShareSharedBoardController
+                note right of ShareSharedBoardController: request is created with the \nclass RequestMessage using \ncode LIST_USERS(10) \npass by parameter the String \nusername and sharedBoard
+                        ShareSharedBoardController -> TcpServerMessageHandler: send(request)
+                        activate TcpServerMessageHandler
+                            TcpServerMessageHandler -> UserRepository: user = findById(user)
+                            activate UserRepository
+                                UserRepository --> TcpServerMessageHandler: returns SystemUser
+                                TcpServerMessageHandler -> UserRepository: allUsers = findAll()
+                                UserRepository --> TcpServerMessageHandler: returns List<SystemUser>
+                            deactivate UserRepository
+                            TcpServerMessageHandler -> TcpServerMessageHandler: allUsers.remove(user)
+                            TcpServerMessageHandler -> SharedBoardRepository: sharedBoard = findSharedBoard(sharedBoard)
+                            activate SharedBoardRepository
+                                SharedBoardRepository --> TcpServerMessageHandler: returns SharedBoard
+                            deactivate SharedBoardRepository
+                            TcpServerMessageHandler -> SharedBoardInvitationRepository: list = findSharedBoardInvitationsOfSharedBoard(sharedBoard)
+                            activate SharedBoardInvitationRepository
+                                SharedBoardInvitationRepository --> TcpServerMessageHandler: returns Iterable<SharedBoardInvitation>
+                            deactivate SharedBoardInvitationRepository
+                            alt for (SharedBoardInvitation sharedBoardInvitation : list)
+                                TcpServerMessageHandler -> TcpServerMessageHandler: allUsers.remove(sharedBoardInvitation.userInvite())
+                            end
+                            alt if(!allUsers.isEmpty())
+                                alt for (SystemUser listUsers : allUsers)
+                                    TcpServerMessageHandler -> TcpServerMessageHandler: users += listUsers.username();
+                                end
+                            end
+                            note right of ShareSharedBoardController: response is created with the \nclass RequestMessage using \ncode SEND_MESSAGE(6) \npass by parameter the String users
+                            TcpServerMessageHandler --> ShareSharedBoardController: send(response)
+                        deactivate TcpServerMessageHandler
+                ShareSharedBoardController --> UI: returns String users
+            deactivate ShareSharedBoardController
+            UI --> Actor: Asks to choose one
+            Actor -> UI: Selects one
+            UI --> Actor: Asks user permission
+            Actor -> UI: Selects option
+            alt if option == Write
+                UI -> ShareSharedBoardController: createSharedBoardInvitation(user, sharedBoard, UserPermission.WRITE)
+                activate ShareSharedBoardController
+            else if option == Read Only
+                UI -> ShareSharedBoardController: createSharedBoardInvitation(user, sharedBoard, UserPermission.READ_ONLY)
+            end
+                activate ShareSharedBoardController
+                    note right of ShareSharedBoardController: request is created with the \nclass RequestMessage using \ncode SHARE_SHAREDBOARD(9)\npass by parameter user,\nsharedBoard, userPermission
+                    ShareSharedBoardController -> TcpServerMessageHandler: send(request)
+                    activate TcpServerMessageHandler
+                        TcpServerMessageHandler -> UserRepository: user = findById(user)
+                        activate UserRepository
+                            UserRepository --> TcpServerMessageHandler: returns SystemUser
+                        deactivate UserRepository
+                        TcpServerMessageHandler -> SharedBoardRepository: sharedBoard = findSharedBoard(sharedBoard)
+                        activate SharedBoardRepository
+                            SharedBoardRepository --> TcpServerMessageHandler: returns SharedBoard
+                        deactivate SharedBoardRepository
+                        TcpServerMessageHandler -> SharedBoardInvitationBuilder**: create()
+                        TcpServerMessageHandler -> SharedBoardInvitationBuilder: withSharedBoard(sharedBoard)
+                        TcpServerMessageHandler -> SharedBoardInvitationBuilder: withUser(user)
+                        TcpServerMessageHandler -> SharedBoardInvitationBuilder: withUserPermission(userPermission)
+                        TcpServerMessageHandler -> SharedBoardInvitationBuilder: build()
+                        SharedBoardInvitationBuilder -> SharedBoardInvitationRepository: save(sharedBoardInvitation)
+
+                        note right of ShareSharedBoardController: response is created with the \nclass RequestMessage using \ncode ACK(2) if success and \nERR(3) if error
+                        TcpServerMessageHandler --> ShareSharedBoardController: send(response)
+                    deactivate TcpServerMessageHandler
+                    ShareSharedBoardController --> UI: send(response)
+                    UI --> Actor: Indicates that the invitation was created!
+                deactivate ShareSharedBoardController
+
+        else if option == Exit
+            UI --> Actor: Returns to menu
+        end
+    end
+
+
+
+@enduml

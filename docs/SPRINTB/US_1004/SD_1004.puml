@@ -1,0 +1,78 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor Manager as Actor
+participant OpenCloseCourseUI as UI <<presentation>>
+control  OpenCloseCourseController as Controller <<application>>
+database CourseRepository as CourseRepository <<repository>>
+entity "course:Course" as CourseDomain <<domain>>
+
+Actor -> UI: asks to change course status
+
+activate UI
+    UI --> Actor: asks if user want to open or close a course
+    Actor -> UI: selects an option
+    UI -> Controller : create()
+    alt if option == OPEN
+        UI -> Controller : findCoursesAvailableToOpen()
+        activate Controller
+            Controller -> CourseRepository : findCoursesAvailableToOpen()
+            activate CourseRepository
+                CourseRepository --> Controller : list courses available to open
+            deactivate CourseRepository
+            Controller --> UI : list courses available to open
+        deactivate Controller
+        alt if course list is not empty
+            UI --> Actor : output courses available to open list\nasks to select a course
+            Actor -> UI : selects a course
+            UI --> Actor : asks for closing date
+            alt while date is not valid
+                Actor -> UI : inserts closing date
+                UI -> Controller : validateDate(closeDate)
+                activate Controller
+                    Controller --> UI : date validation boolean
+                deactivate
+                alt if date is valid
+                    UI -> Controller : openCourse(selectedCourse, closingDate)
+                    activate Controller
+                        Controller -> CourseDomain : openCourse(closingDate)
+                        Controller -> CourseRepository : saveCourse(course)
+                    deactivate Controller
+                else if date is not valid
+                    UI --> Actor : informs about date not valid
+                end
+            end
+        else if course list is empty
+            UI --> Actor : inform there are no courses available to be open
+        end
+    else if option == CLOSE
+        UI -> Controller : findCoursesAvailableToClose()
+        activate Controller
+            Controller -> CourseRepository : findCoursesAvailableToClose()
+            activate CourseRepository
+                CourseRepository --> Controller : list courses available to close
+            deactivate CourseRepository
+            Controller --> UI : list courses available to close
+        deactivate Controller
+        alt if course list is not empty
+            UI --> Actor : output courses available to close list\nasks to select a course
+            Actor -> UI : selects a course
+            UI -> Controller : closeCourse(selectedCourse)
+            activate Controller
+                Controller -> CourseDomain : closeCourse()
+                Controller -> CourseRepository : saveCourse(course)
+            deactivate Controller
+            else if course list is empty
+                UI --> Actor : inform there are no courses available to be open
+            end
+    end
+
+    UI --> Actor : back to menu
+deactivate UI
+
+@enduml

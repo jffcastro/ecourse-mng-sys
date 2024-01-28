@@ -1,0 +1,42 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor Student as User
+activate User
+User -> System: Wants to take an automatic exam
+activate System
+alt if exam is not null
+System --> User : Asks if student wants to do the\n exam manually or import a file
+deactivate System
+User -> System: Selects option
+alt if option is manual
+loop for each section in section list
+System-->User: shows section information
+loop for each question in question list
+User-> System: shows question and asks for student to answer
+activate System
+System-->User: answers question
+deactivate System
+end
+end
+else if option is file
+    User <-- System : shows exam sections and questions
+    User <-- System : ask for file path
+    User -> System : inserts file path
+    alt if file is not null
+        System --> User: inform about exam finished
+    else if file is null
+        User <-- System : informs about file not valid
+    end
+end
+System--> User : shows feedback
+deactivate User
+end
+
+
+@enduml

@@ -1,0 +1,47 @@
+@startuml
+
+class ListExamGradesUI <<UI>> {
+}
+
+class ListExamGradesController <<Controller>> {
+    + Iterable <Course> : findCoursesAvailableForTeacher()
+    + Iterable<ExamEnrollment> : findExamEnrollsOfCourse(course)
+}
+
+class ListAvailableCoursesController <<Controller>> {
+    + Iterable <Course> : findCoursesAvailableForTeacher()
+}
+
+class Exam <<Domain>> {
+    - Long : examID
+    - Course : course
+    - String : description
+    - Date : openDate
+    - Date : closeDate
+    - Language : language
+    - Header : header
+    - Structure : structure
+    - ExamStatus : ExamStatus
+}
+
+class ExamEnrollment <<Domain>> {
+    - Long : examEnrollmentID
+    - Enrollment : enrollment
+    - Grade : examGrade
+    - ExamEnrollmentStatus : examEnrollmentStatus
+}
+
+class ExamEnrollmentRepository {
+    + Iterable<Exam> : findExamEnrollsOfCourse(course)
+}
+
+
+ListExamGradesUI ..> ListExamGradesController
+ListExamGradesController --> ListAvailableCoursesController
+ListExamGradesController --> ExamRepository
+ExamRepository --> Exam : contains >
+ListExamGradesController --> ExamEnrollmentRepository
+ExamEnrollmentRepository --> ExamEnrollment : contains >
+
+
+@enduml

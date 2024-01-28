@@ -1,0 +1,64 @@
+@startuml
+
+class TakeAutoExamUI <<UI>> {
+}
+
+class CreateUpdateAutoExamUI <<UI>> {
+}
+
+class CommonTakeExamUI <<UI>> {
+    + Grade : takeExam(exam)
+    + Grade : takeManualExam(exam)
+    + Grade : takeExamByFile(exam)
+    + String : askForStudentAnswer(question)
+    + String : askfForMatchingAnswer()
+    + String : askfForMissingWordAnswer()
+    + String : askfForMultipleChoiceAnswer()
+    + String : askfForShortAnswer()
+    + String : askfForNumericAnswer()
+    + String : askfForTrueOrFalseAnswer()
+}
+
+class CommonTakeExamController <<Controller>> {
+    + File : importFile(path)
+    + boolean : correctQuestion(question, answer)
+    + Grade : correctExamByFile(exam, file)
+}
+
+class CommonTakeExamService <<Service>> {
+    + File : importFile(path)
+    + boolean : correctQuestion(question, answer)
+    + Grade : correctExamByFile(exam, file)
+}
+
+class TakeExamEvalVisitor << Visitor>> {
+    + Grade : correctExam(tree, exam)
+}
+
+class Exam <<Domain>> {
+    - Long : examID
+    - Course : course
+    - String : description
+    - Date : openDate
+    - Date : closeDate
+    - Language : language
+    - Header : header
+    - Structure : structure
+    - ExamStatus : ExamStatus
+}
+
+class Grade <<Grade>> {
+    - Float : grade
+}
+
+
+TakeAutoExamUI ..> CreateUpdateAutoExamUI
+TakeAutoExamUI ..> CommonTakeExamUI
+CommonTakeExamUI ..>  CommonTakeExamController
+CommonTakeExamUI ..>  CommonTakeExamService
+CommonTakeExamService --> TakeExamEvalVisitor
+TakeExamEvalVisitor --> Exam : corrects >
+TakeExamEvalVisitor --> Grade : generates >
+Exam --> Grade : has >
+
+@enduml

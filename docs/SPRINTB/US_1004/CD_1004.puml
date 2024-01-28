@@ -1,0 +1,60 @@
+@startuml
+
+class ChangeCourseStatusUI <<UI>> {
+}
+
+class OpenCloseCourseController <<Controller>> {
+    + List<Course>: findCoursesAvailableToOpen()
+    + boolean: validateDate(closeDate)
+    + Course : openCourse(course, closingDate)
+    + List<Course>: findCoursesAvailableToClose()
+    + Course : closeCourse(course)
+    + void : saveCourse(course)
+}
+
+class CourseRepository <<Repository>> {
+    + List<Course> : findCoursesAvailableToOpen()
+    + List<Course> : findCoursesAvailableClose()
+    + void : saveCourse(course)
+}
+
+class Course <<Entity>> {
+        - CourseID: courseID
+        - String : courseCode
+        - CourseName : courseName
+        - String : description
+        - Integer: minStudents
+        - Integer: maxStudents
+        - Teacher: teacherInCharge
+        - Date: courseOpenDate
+        - Date: courseCloseDate
+        - Date: enrollmentOpenDate
+        - Date: enrollmentCloseDate
+        + void: openCourse(closingDate)
+        + void: closeCourse()
+}
+
+class CourseID <<Value Object>> {
+    String: courseID
+}
+
+class CourseName <<Value Object>> {
+    String: courseName
+}
+
+enum CourseStatus {
+        CLOSE
+        OPEN
+        ENROLL
+        IN_PROGRESS
+        CLOSED
+}
+
+ChangeCourseStatusUI ..> OpenCloseCourseController
+OpenCloseCourseController --> CourseRepository
+CourseRepository --> Course : saves >
+Course ---* CourseID
+Course ---* CourseName
+Course "1" --->  "1" CourseStatus
+
+@enduml

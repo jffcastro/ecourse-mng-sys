@@ -1,0 +1,40 @@
+@startuml
+
+class DeactivateUserUI{
+    +doShow()
+    +headline()
+}
+
+
+class DeactivateUserController{
+    +activeUsers()
+    +deactivateUser()
+}
+
+
+class UserRepository{
+    +findByActive()
+    +save()
+}
+
+
+class UserManagementService{
+    +activatedUsers()
+    +deactivateUser()
+}
+
+class SystemUser{
+    -active
+    +deactivate()
+}
+
+
+DeactivateUserUI ..> DeactivateUserController
+
+DeactivateUserController ..> UserManagementService
+
+UserManagementService --> UserRepository: uses >
+
+UserManagementService --> SystemUser: deactivates >
+
+@enduml

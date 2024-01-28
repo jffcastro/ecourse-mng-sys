@@ -1,0 +1,126 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+autonumber
+
+actor Manager as Actor
+participant setTeachersCourseUI as UI <<presentation>>
+control setTeachersCourseController as Controller <<application>>
+database CourseRepository as courseRepository <<repository>>
+database TeacherRepository as teacherRepository <<repository>>
+participant TeachingBuilder as teachingBuilder <<builder>>
+database TeachingRepository as teachingRepository <<repository>>
+
+activate Actor
+Actor -> UI : Asks the list of courses
+activate UI
+    UI -> Controller** : create()
+    UI -> Controller : findCourseWithOpenStatus()
+
+    activate Controller
+
+    Controller -> courseRepository : findCourseWithOpenStatus()
+    activate courseRepository
+    courseRepository --> Controller : coursesList
+
+    deactivate courseRepository
+    Controller --> UI : coursesList
+    deactivate Controller
+    UI--> Actor : coursesList
+    deactivate UI
+    Actor -> UI : selects a course
+    activate UI
+    UI-> Controller : findTeachersAvailableForCourse()
+
+    activate Controller
+
+    Controller -> teacherRepository : findAll()
+    activate teacherRepository
+    teacherRepository --> Controller : teacherList
+    deactivate teacherRepository
+    Controller->teachingRepository: findTeachersOfCourse(course)
+    activate teachingRepository
+    teachingRepository->Controller: teachersOfCourse
+    deactivate teachingRepository
+    loop  for (Teacher teacher : teachersOfCourse
+        alt if (teacherList.contains(teacher))
+            Controller->Controller: teachersOfCourse.remove()
+        end
+    end
+    Controller->UI: teacherList
+    deactivate Controller
+    UI--> Actor : teacherList
+deactivate UI
+    Actor->UI : selects a teacher in charge
+    activate UI
+    UI -> Controller:  courseHasTeacherInCharge(Course course)
+    activate Controller
+    Controller -> teachingRepository : findTeacherInChargeOfCourse(course)
+    activate teachingRepository
+    alt if teacher in charge is not null
+    teachingRepository --> Controller : return teacherInCharge
+
+    else
+    teachingRepository --> Controller : return null
+    end
+    deactivate teachingRepository
+    Controller --> UI: return boolean
+    alt if boolean == true
+        UI->Controller: saveTeacherInCharge(teacherInCharge, course)
+
+            Controller -> teachingBuilder : create
+            Controller -> teachingBuilder : ofTeacher(teacherInCharge)
+            Controller -> teachingBuilder : inCourse(course)
+            Controller -> teachingBuilder : asPrimary(true)
+            Controller -> teachingBuilder : build()
+            activate teachingBuilder
+            teachingBuilder --> Controller : return teaching
+            deactivate teachingBuilder
+            Controller -> teachingRepository : save(teaching)
+
+    end
+    Controller-->UI: shows operation success
+     deactivate Controller
+    UI-->Actor: shows operation success
+    deactivate UI
+
+loop while (not exit)
+    Actor->UI : inserts a teacher
+    activate UI
+         alt if teacher is not null
+        UI->Controller: saveTeacher(teacher, course)
+        activate Controller
+                    deactivate teachingRepository
+                    alt if teaching is not null
+                        Controller -> teachingBuilder : create
+                        Controller -> teachingBuilder : ofTeacher(teacher)
+                        Controller -> teachingBuilder : inCourse(course)
+                        Controller -> teachingBuilder : asPrimary(true)
+                        Controller -> teachingBuilder : build()
+                        activate teachingBuilder
+                        teachingBuilder --> Controller : return teaching
+                        deactivate teachingBuilder
+                        Controller -> teachingRepository : save(teaching)
+                 end
+
+                 end
+                 Controller --> UI : show operation choose teacher succes
+                    deactivate Controller
+
+                UI--> Actor : show operation choose teacher succes
+end
+    UI -> UI: output Operation Success
+    UI -->  Actor : shows operation success
+    deactivate UI
+
+deactivate Actor
+
+
+
+
+@enduml
+

@@ -1,0 +1,72 @@
+@startuml
+
+class CreateUpdateAutoExamUI <<UI>> {
+}
+
+class CreateUpdateAutoExamController <<Controller>> {
+    + File : importFile(path)
+    + Exam : createAutoExam(file)
+}
+
+class CreateUpdateExamService {
+    + File : importFile(path)
+    + Exam : createAutoExam(file)
+    + Exam : generateAutoExam(file, course)
+}
+
+class AutoExamEvalVisitor <<Visitor>> {
+    + Exam : buildExam(tree, course)
+}
+
+class ExamBuilder <<Builder>> {
+    + ExamBuilder : ofCourse(course)
+    + ExamBuilder : withTitle(title)
+    + ExamBuilder : withDescription(description)
+    + ExamBuilder : withLanguage(language)
+    + ExamBuilder : withStructure(structure)
+    + ExamBuilder : withHeader(header)
+    + Exam : buildAuto()
+}
+
+class HeaderBuilder <<Builder>> {
+    + HeaderBuilder : withDescription(headerDescription)
+    + HeaderBuilder : withFeedbackType(feedbackType)
+    + HeaderBuilder : withGradeType(gradeType)
+    + Header : build()
+}
+
+class Exam <<Domain>> {
+    - Long : examID
+    - Course : course
+    - String : description
+    - Language : language
+    - Header : header
+    - Structure : structure
+    - ExamStatus : ExamStatus
+}
+
+class Header <<Domain>> {
+    - String : description
+    - FeedbackType : feedbackType
+    - HeaderType : headerType
+    }
+
+class ExamRepository {
+    + Iterable<Exam> : findByCourseAndType(course, type)
+    + void : save (exam)
+    + void : delete (exam)
+}
+
+
+
+CreateUpdateAutoExamUI ..> CreateUpdateAutoExamController
+CreateUpdateAutoExamController ..> CreateUpdateExamService
+CreateUpdateExamService --> ExamRepository
+ExamRepository --> Exam : saves
+CreateUpdateExamService --> AutoExamEvalVisitor
+AutoExamEvalVisitor --> ExamBuilder
+ExamBuilder --> Exam : creates >
+AutoExamEvalVisitor --> HeaderBuilder
+HeaderBuilder --> Header : creates >
+
+@enduml

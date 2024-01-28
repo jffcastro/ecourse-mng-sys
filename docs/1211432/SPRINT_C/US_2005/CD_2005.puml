@@ -1,0 +1,18 @@
+@startuml
+
+class ListOfMyGradesUI <<UI>> {
+}
+
+class ListOfMyGradesController <<Controller>> {
+    + Iterable<ExamEnrollment> listMyGrades(student)
+}
+
+class ExamEnrollmentRepository <<Repository>> {
+    + Iterable<ExamEnrollment> findExamGradesOfStudent(student)
+}
+
+ListOfMyGradesUI ..> ListOfMyGradesController
+ListOfMyGradesController ..> ExamEnrollmentRepository
+
+
+@enduml

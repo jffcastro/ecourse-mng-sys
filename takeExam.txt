@@ -1,0 +1,11 @@
+"
+section1:
+    1. cao->dog,gato->cat;
+    2. porco->pig, baleia->whale;
+section2:
+    1. 7000metros;
+    2. teste;
+    3. 3000;
+    4. city;
+    5. True;
+"

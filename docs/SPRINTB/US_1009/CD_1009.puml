@@ -1,0 +1,32 @@
+@startuml
+
+class AcceptRejectRequestEnrollmentUI <<UI>> {
+}
+
+class AcceptRejectRequestEnrollmentController <<Controller>> {
+    + Iterable<Enrollment> : findEnrollmentRequests()
+    + void : acceptEnrollment(enrollment)
+    + void : rejectEnrollment(enrollment)
+}
+
+class Enrollment <<Domain>> {
+    - Student : student
+    - Course : course
+    - EnrollmentStatus : enrollmentStatus
+    - Grade : grade
+    - List<ExamEnrollment> : exameEnrollmentsList
+    + void : acceptEnrollment()
+    + void : rejectEnrollment()
+}
+
+class EnrollmentRepository <<Repository>> {
+    + Iterable<Enrollment> : findEnrollmentRequests()
+    + void : save (enrollment)
+}
+
+AcceptRejectRequestEnrollmentUI ..> AcceptRejectRequestEnrollmentController
+AcceptRejectRequestEnrollmentController --> EnrollmentRepository
+EnrollmentRepository --> Enrollment : saves >
+
+
+@enduml

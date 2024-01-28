@@ -1,0 +1,16 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor Student as Student
+
+Student -> System: asks to list all the future exams
+activate System
+Student <-- System: returns the list with all the future exams
+deactivate System
+
+@enduml

@@ -1,0 +1,108 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+autonumber
+
+actor User as User
+participant UserMeetingInvitationUI as UI <<presentation>>
+control UserMeetingInvitationController as Controller <<application>>
+
+participant "theMeetingInvitation :MeetingInvitation" as  MeetingInvitation <<domain>>
+participant CheckIfUserIsFreeService as CheckIfUserIsFreeService <<service>>
+database MeetingRepository as MeetingRepository <<repository>>
+database MeetingInvitationRepository as MeetingInvitationRepository <<repository>>
+database ClassRepository as ClassRepository <<repository>>
+participant PersistenceContext as PersistenceContext <<persistence>>
+
+
+activate User
+User -> UI : wants to accept or reject a meeting invitation
+
+activate UI
+    UI -> Controller** : create()
+    UI-> Controller: getMeetingInvitationList()
+    activate Controller
+    Controller->MeetingInvitationRepository: findMeetingInvitationOfUserWithStatusPending(user)
+    activate MeetingInvitationRepository
+    MeetingInvitationRepository-->Controller: meetingInvitationList
+    deactivate MeetingInvitationRepository
+    Controller->UI: meetingInvitationList
+    deactivate Controller
+    alt if meetingInvitationList not empty
+        UI --> User: shows meetings invitation to accept or reject
+        User -> UI : selects a meeting to accept or reject
+        User -> UI : clicks on accept or reject
+        alt if user accepts
+        UI -> Controller: checkMeeting
+        activate Controller
+        Controller -> CheckIfUserIsFreeService: checkIfUserIsNotFree(user, date, startTime, endTime)
+        activate CheckIfUserIsFreeService
+        CheckIfUserIsFreeService -> PersistenceContext: findClassesOfUser(user)
+        activate PersistenceContext
+        activate ClassRepository
+        PersistenceContext -> ClassRepository: findClassesOfUser(user)
+        ClassRepository -> CheckIfUserIsFreeService: classes
+        deactivate PersistenceContext
+        deactivate ClassRepository
+        CheckIfUserIsFreeService -> PersistenceContext: findMeetingsOfUser(user)
+        activate PersistenceContext
+        activate MeetingRepository
+        PersistenceContext -> MeetingRepository: findMeetingsOfUser(user)
+        MeetingRepository -> CheckIfUserIsFreeService: meetings
+        deactivate PersistenceContext
+        deactivate MeetingRepository
+        CheckIfUserIsFreeService -> PersistenceContext: findMeetingInvitationsOfUser(user)
+        activate PersistenceContext
+        activate MeetingInvitationRepository
+        PersistenceContext -> MeetingInvitationRepository: findMeetingInvitationsOfUser(user)
+        MeetingInvitationRepository -> CheckIfUserIsFreeService: meetingInvitations
+        deactivate PersistenceContext
+        deactivate MeetingInvitationRepository
+
+
+        CheckIfUserIsFreeService -> CheckIfUserIsFreeService: checkIfDatesCoincide(Date date, LocalTime startTime, LocalTime endTime,\nList<CourseClass> classLst, List<Meeting> meetLst,\n List<MeetingInvitation> meetInvLst)
+        CheckIfUserIsFreeService -> Controller: isFree
+        deactivate CheckIfUserIsFreeService
+        deactivate PersistenceContext
+        Controller -> UI: isFree
+        deactivate Controller
+        UI -> MeetingInvitation: setMeetingInvitationStatus(ACCEPTED)
+        UI -> Controller: saveMeetingInvitation(meetingInvitation)
+        activate Controller
+        Controller -> PersistenceContext: saveMeetingInvitation(meetingInvitation)
+        activate PersistenceContext
+        PersistenceContext -> MeetingInvitationRepository: save(meetingInvitation)
+        activate MeetingInvitationRepository
+        deactivate MeetingInvitationRepository
+        deactivate PersistenceContext
+        deactivate Controller
+        UI -> User: shows meeting accepted
+        end
+        alt if user rejects
+        UI -> MeetingInvitation: setMeetingInvitationStatus(REJECTED)
+                UI -> Controller: saveMeetingInvitation(meetingInvitation)
+                activate Controller
+                Controller -> PersistenceContext: saveMeetingInvitation(meetingInvitation)
+                activate PersistenceContext
+                PersistenceContext -> MeetingInvitationRepository: save(meetingInvitation)
+                activate MeetingInvitationRepository
+                deactivate MeetingInvitationRepository
+                deactivate PersistenceContext
+                deactivate Controller
+                UI -> User: shows meeting rejected
+                end
+    alt if meetingInvitationList empty
+        UI --> User: shows no meeting to accept or reject
+    end
+
+deactivate User
+
+
+
+
+@enduml
+

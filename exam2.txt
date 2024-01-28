@@ -1,0 +1,60 @@
+"
+exam2;
+teste exam;
+29/10/2023;
+01/11/2023;
+language;
+header;
+ON_SUBMISSION;
+ON_SUBMISSION;
+<<
+    section1;
+    ??
+        1;
+        MatchingQuestion;
+
+        Match the countries to theirs capitals;
+        Portugal,Spain;
+        Madrid,Portugal;
+
+        Portugal->Portugal,Spain->Madrid;
+        2
+    ??
+>>
+<<
+    section2;
+    ??
+        1;
+        MultipleChoiceQuestion;
+
+        how tall is the Serra da Estrela?;
+        100metros,
+        2000metros,
+        7000metros;
+
+        7000metros;
+        5
+    ??
+    ??
+        3;
+        NumericQuestion;
+        In what year was the 25 de abril?;
+        1974;
+        5
+    ??
+    ??
+        4;
+        ShortQuestion;
+        What is the capital of Portugal?;
+        Lisbon;
+        2
+    ??
+    ??
+        5;
+        TrueFalseQuestion;
+        Is Portugal in the European Union?;
+        True;
+        3
+    ??
+>>
+"

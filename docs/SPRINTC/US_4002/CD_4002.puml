@@ -1,0 +1,69 @@
+@startuml
+
+class CancelMeetingUI <<UI>> {
+}
+
+class CancelMeetingController <<Controller>> {
+    + List<Meeting>: findMeetingsAvailableToCancel(user)
+    - void: cancelMeeting(meeting)
+    - void : cancelMeetingsInvitation(meeting)
+}
+
+class MeetingRepository <<Repository>> {
+    + List<Meeting>: findMeetingsAvailableToCancel(user)
+    - void : save(meeting)
+}
+
+
+class Meeting <<Aggregate Root>>{
+    String: description
+    LocalTime: startTime
+    LocalTime: endTime
+    DateInterval: timePeriod
+    Date: date
+    User: organizer
+    - void : cancelMeeting()
+}
+
+class MeetingInvitation <<Entity>>{
+    int: inviteID
+    Meeting: meeting
+
+    - void : changeMeetingInvitationStatusToCanceled(meetingInvitation)
+
+}
+
+enum MeetingInvitationStatus {
+    PENDING
+    ACCEPTED
+    DECLINED
+    CANCELED
+}
+
+enum MeetingStatus{
+    CREATED
+    CANCELED
+}
+
+
+class MeetingInvitationRepository <<Repository>> {
+    + List<MeetingInvitation>: findMeetingsInvitationOfMeeting(meeting)
+    - void : save(meetingInvitation)
+}
+
+
+Meeting "1" -> "*" MeetingInvitation : has >
+MeetingInvitation "1" -> "1" MeetingInvitationStatus : has >
+Meeting "1" -left-> "1" MeetingStatus : has >
+
+CancelMeetingUI ..> CancelMeetingController
+CancelMeetingController ..> MeetingRepository
+CancelMeetingController ..> MeetingInvitationRepository
+
+CancelMeetingController ..> Meeting
+CancelMeetingController ..> MeetingInvitation
+
+MeetingRepository --> Meeting : saves >
+MeetingInvitationRepository --> MeetingInvitation : saves >
+
+@enduml

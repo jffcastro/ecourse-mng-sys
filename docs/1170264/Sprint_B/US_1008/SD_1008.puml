@@ -1,0 +1,56 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor Manager as Actor
+participant RequestEnrollmentUI as UI <<presentation>>
+control RequestEnrollmentController as Controller <<application>>
+database CourseRepository as CourseRepository <<repository>>
+participant EnrollmentBuilder as EnrollmentBuilder <<builder>>
+entity Enrollment as Enrollment <<Domain>>
+database EnrollmentRepository as EnrollmentRepository <<repository>>
+
+Actor -> UI: asks to enroll in a course
+activate UI
+    UI -> Controller: findCoursesAvailableForStudentToEnroll(student)
+    activate Controller
+        Controller -> CourseRepository : findCoursesInEnrollmentStatus
+        activate CourseRepository
+            CourseRepository --> Controller
+        deactivate CourseRepository
+        Controller -> EnrollmentRepository : findEnrollmentsOfStudent(student)
+        activate EnrollmentRepository
+            EnrollmentRepository --> Controller
+        deactivate EnrollmentRepository
+        note right of Controller : For each cycle used to remove the courses where the student is already enrolled/already requested to enroll at
+        alt for Enrollment enrollment : studentEnrollmentsList()
+            alt if coursesList.contains(enrollment.course) and (enrollment.enrollmentStatus is 'ACCEPTED' or 'UNDER_APPRECIATION')
+                Controller -> Controller : coursesList.remove(enrollment.course)
+            end
+        end
+        Controller --> UI
+    deactivate Controller
+    UI --> Actor: shows available courses list\nasks to choose course
+    Actor -> UI: chooses course
+    UI -> Controller : createEnrollment(course)
+    activate Controller
+        Controller -> EnrollmentBuilder : create
+        Controller -> EnrollmentBuilder : withEnrollmentStatus(EnrollmentStatus.UNDER_APPRECIATION)
+        note right of Controller : get the student logged in the system
+        Controller -> EnrollmentBuilder : ofStudent(student)
+        Controller -> EnrollmentBuilder : inCourse(course)
+        Controller -> EnrollmentBuilder : build()
+        activate EnrollmentBuilder
+            EnrollmentBuilder --> Controller
+        deactivate EnrollmentBuilder
+        Controller -> EnrollmentRepository : save(newEnrollment)
+    Controller --> UI
+    deactivate Controller
+    UI --> Actor : informs about operation success
+deactivate UI
+
+@enduml

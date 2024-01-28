@@ -1,0 +1,46 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+Teacher -> System: Authentication Request
+System --> Teacher: Authentication Response
+
+Teacher -> System: Asks for permission to add/update
+Teacher <-- System: Operation (in)success
+
+Teacher -> System: Asks to create/update a Question
+Teacher <-- System: asks to select one option (create/update)
+
+Teacher -> System : chooses option
+
+alt if option is create question
+    System --> Teacher : Ask user to insert file path
+    Teacher -> System : Inserts file path
+    alt if file is not null
+    alt if question is not null
+    System --> Teacher: shows the question created
+    else if question is null
+    System --> Teacher: informs about question not being valid
+    end
+
+    else if file is null
+    System --> Teacher: informs about file not being valid
+    end
+
+    else if option is update
+    System --> Teacher: shows available question list \n asks to choose question to update
+    Teacher -> System: chooses question to update
+
+    alt if file is not null
+    alt if new question is not null
+        System --> Teacher: shows the new question created
+    else if question is null
+        System --> Teacher: informs about new question not being valid
+    end
+
+    else if file is null
+        System --> Teacher: informs about file not being valid
+    end
+
+@enduml

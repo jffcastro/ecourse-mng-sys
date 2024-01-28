@@ -1,0 +1,41 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+autonumber
+
+actor Teacher as Actor
+participant ListQuestionUI as UI <<presentation>>
+participant ListQuestionController as Controller <<application>>
+participant PersistenceContext as Persistence <<persistence>>
+participant RepositoryFactory as Factory <<factory>>
+database QuestionRepository as Repository <<repository>>
+
+Actor --> UI: list all Questions
+activate UI
+    UI -> Controller : create()
+           UI -> Controller: listQuestions()
+           activate Controller
+               Controller -> Persistence : repositories()
+               activate Persistence
+                   Persistence -> Factory : create()
+                   Persistence --> Controller
+                   deactivate Persistence
+                    Controller -> Factory : questions()
+                    activate Factory
+                    Factory -> Repository : create()
+                    Factory --> Controller
+                   deactivate Factory
+               Controller -> Repository : findAll()
+               activate Repository
+                   Repository --> Controller
+               deactivate Repository
+               Controller --> UI
+           deactivate Controller
+           UI -> UI: output Questions List
+           UI --> Actor
+
+@enduml

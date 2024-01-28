@@ -1,0 +1,67 @@
+@startuml
+actor User as Actor
+boundary UI
+
+activate Actor
+
+Actor -> UI: Schedule a meeting
+activate UI
+UI --> Actor: Authorization status
+deactivate UI
+alt if authorized
+UI --> Actor: Asks for meeting description
+activate UI
+Actor -> UI: meeting description
+deactivate UI
+
+
+UI -> Actor: Asks for meeting Date
+activate UI
+Actor -> UI: meeting Date
+deactivate UI
+UI -> Actor: Asks for meeting Start Time
+activate UI
+Actor -> UI:  meeting Start Time
+deactivate UI
+UI -> Actor: Asks for meeting End Time
+activate UI
+Actor -> UI: meeting End Time
+deactivate UI
+
+
+
+
+alt if organizer is available
+
+UI -> Actor: Meeting creation status
+activate UI
+else
+UI -> Actor: Inform organizer is not available
+deactivate UI
+
+end
+loop while user wants to invite participants
+UI -> Actor: Shows a list with participants to invite
+activate UI
+
+Actor -> UI: selects participants
+end loop
+deactivate UI
+
+
+alt if invitees not null
+UI -> Actor: MeetingInvitation creation status
+activate UI
+else
+UI -> Actor: Inform user is not available
+
+
+end
+
+else
+UI -> Actor: Inform user is not authorized
+
+deactivate UI
+end
+
+@enduml

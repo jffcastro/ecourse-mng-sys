@@ -1,0 +1,55 @@
+@startuml
+
+class BulkEnrollStudentsUI <<UI>> {
+}
+
+class BulkEnrollStudentsController <<Controller>> {
+    + File : importFile(path)
+    + boolean : validateFile(file)
+    + Integer : bulkEnrollStudents(file)
+}
+
+class BulkEnrollStudentsService {
+    + File : importFile(path)
+    + boolean : validateFile(file)
+    + void : bulkEnrollStudents(file)
+}
+
+class StudentRepository <<Repository>> {
+    + Optional<Student> : findByMecanographicNumber(mecanographicNumber)
+}
+
+class CourseRepository <<Repository>> {
+    + Course : findByName(courseName)
+}
+
+class EnrollmentBuilder <<Builder>> {
+    + EnrollmentBuilder : withEnrollmentStatus(enrollmentStatus)
+    + EnrollmentBuilder : ofStudent(student)
+    + EnrollmentBuilder : inCourse(course)
+    + Enrollment : build()
+}
+
+class Enrollment <<Domain>> {
+    - Long : enrollmentID
+    - Student : student
+    - Course : course
+    - EnrollmentStatus : enrollmentStatus
+    - Grade : courseGrade
+    - List<ExamEnrollment> : examEnrollment
+}
+
+class EnrollmentRepository {
+    + void : save (enrollment)
+}
+
+BulkEnrollStudentsUI ..> BulkEnrollStudentsController
+BulkEnrollStudentsController ..> BulkEnrollStudentsService
+BulkEnrollStudentsService --> StudentRepository
+BulkEnrollStudentsService --> CourseRepository
+BulkEnrollStudentsService --> EnrollmentRepository
+BulkEnrollStudentsService --> EnrollmentBuilder
+EnrollmentBuilder --> Enrollment : creates >
+EnrollmentRepository --> Enrollment : saves >
+
+@enduml

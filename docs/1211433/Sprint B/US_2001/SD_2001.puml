@@ -1,0 +1,191 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor Teacher as Actor
+participant CreateUpdateExamUI as UI <<presentation>>
+control CreateUpdateExamController as Controller <<application>>
+control CreateExamService as Service <<application>>
+database ExamRepository as ExamRepository <<repository>>
+control ListAvailableCoursesController as ListAvailableCoursesController <<application>>
+control EvalVisitor as EvalVisitor <<visitor>>
+participant ExamBuilder as ExamBuilder <<factory>>
+participant HeaderBuilder as HeaderBuilder <<factory>>
+participant SectionBuilder as SectionBuilder <<factory>>
+participant QuestionBuilder as QuestionBuilder <<factory>>
+entity Exam as ExamDomain <<domain>>
+entity Header as HeaderDomain <<domain>>
+entity Section as SectionDomain <<domain>>
+entity Question as QuestionDomain <<domain>>
+
+Actor -> UI : asks to create/update an exam
+activate UI
+    UI --> Actor : asks to select one option (create/update)
+    Actor -> UI : chooses option
+    alt if option is create exam
+        UI --> Actor : asks to insert file path
+        Actor -> UI : inserts file path
+        UI -> Controller : importFile(path)
+        activate Controller
+            Controller -> Service : importFile(path)
+            activate Service
+                Service --> Controller : file imported
+            deactivate Service
+            Controller --> UI : file imported
+        deactivate Controller
+        alt if file is not null
+            UI -> Controller : createExam(file)
+            activate Controller
+                Controller -> Service : createExam(file)
+                activate Service
+                    Service -> Service : generateExam(course, file)
+                    Service -> EvalVisitor : buildExam(ParseTree tree, Course course)
+                    activate EvalVisitor
+                        note right of EvalVisitor : this is the part related to ANTLR
+                        EvalVisitor -> ExamBuilder : create()
+                        EvalVisitor -> ExamBuilder : ofCourse(course)
+                        EvalVisitor -> ExamBuilder : withTitle(title)
+                        EvalVisitor -> ExamBuilder : withDescription(description)
+                        EvalVisitor -> ExamBuilder : withOpenDate(openDate)
+                        EvalVisitor -> ExamBuilder : withCloseDate(closeDate)
+                        EvalVisitor -> ExamBuilder : withLanguage(language)
+                        EvalVisitor -> HeaderBuilder : withDescription(headerDescription)
+                        EvalVisitor -> HeaderBuilder : withFeedbackType(feedbackType)
+                        EvalVisitor -> HeaderBuilder : withGradeType(gradeType)
+                        activate HeaderBuilder
+                            HeaderBuilder -> HeaderDomain : create(description, feedbackType, gradeType)
+                            activate HeaderDomain
+                                HeaderDomain --> HeaderBuilder : header created
+                            deactivate HeaderDomain
+                            HeaderBuilder --> EvalVisitor : header created
+                        deactivate HeaderBuilder
+                        EvalVisitor -> ExamBuilder : withHeader(header)
+                        EvalVisitor -> ExamBuilder : build()
+                        activate ExamBuilder
+                            ExamBuilder -> ExamDomain : create(course, title, description, openDate, closeDate, language, header)
+                            activate ExamDomain
+                                ExamDomain --> ExamBuilder : exam created
+                            deactivate ExamDomain
+                            ExamBuilder --> EvalVisitor : exam created
+                        deactivate ExamBuilder
+                        
+                        alt loop
+                            EvalVisitor -> SectionBuilder : create()
+                            EvalVisitor -> SectionBuilder : ofExam(exam)
+                            EvalVisitor -> SectionBuilder : withDescription(description)
+                            EvalVisitor -> SectionBuilder : build()
+                            activate SectionBuilder
+                                SectionBuilder -> SectionDomain : create(exam, description)
+                                activate SectionDomain
+                                    SectionDomain --> SectionBuilder : section created
+                                deactivate SectionDomain
+                                SectionBuilder --> EvalVisitor : section created
+                            deactivate SectionBuilder
+                            alt loop
+                                EvalVisitor -> QuestionBuilder : create()
+                                EvalVisitor -> QuestionBuilder : ofSection(section)
+                                EvalVisitor -> QuestionBuilder : ofGroup(group)
+                                EvalVisitor -> QuestionBuilder : ofQuestionType(questionType)
+                                EvalVisitor -> QuestionBuilder : withQuestion(question)
+                                EvalVisitor -> QuestionBuilder : withCorrectAnswer(correctAnswer)
+                                EvalVisitor -> QuestionBuilder : withQuotation(quotation)
+                                EvalVisitor -> QuestionBuilder : build()
+                                activate QuestionBuilder
+                                    QuestionBuilder -> QuestionDomain : create(section, group, questionType, question, correctAnswer, quotation)
+                                    activate QuestionDomain
+                                        QuestionDomain --> QuestionBuilder : question created
+                                    deactivate QuestionDomain
+                                    QuestionBuilder --> EvalVisitor : question created
+                                deactivate QuestionBuilder
+                                EvalVisitor -> EvalVisitor : questionList.add(question)
+                            end
+                            EvalVisitor -> SectionDomain : changeQuestions(questionList)
+                            EvalVisitor -> EvalVisitor : sectionList.add(section)
+                        end
+                        EvalVisitor -> ExamDomain: changeSections(sections)
+                        EvalVisitor --> Service : exam generated
+                    deactivate EvalVisitor
+                    alt if exam is not null and !examRepository.existsByTitle(exam.title()\n and !examHasQuotationOf20(exam))
+                        Service -> ExamRepository : save(exam)
+                        Service -> Service : createExamEnrollments(exam)
+                    end
+                    Service --> Controller : exam generated
+                deactivate Service
+                Controller --> UI : exam generated
+            deactivate Controller
+            alt if exam is not null
+                UI --> Actor : shows the exam created
+            else if exam is null
+                UI --> Actor : informs about exam not being valid
+            end
+        else if file is null
+                UI --> Actor : informs about file not being valid
+        end
+    else if option is update exam
+        UI -> Controller : findExamsAvailableForTeacher()
+        activate Controller
+            Controller -> Service : findExamsAvailableForTeacher()
+            activate Service
+                Service -> ListAvailableCoursesController : listCoursesAvailableForTeacher()
+                activate ListAvailableCoursesController
+                    note right of ListAvailableCoursesController : this controller belongs to US 1006. Check documentation
+                    ListAvailableCoursesController --> Service : list of courses available for teacher
+                deactivate ListAvailableCoursesController
+
+                alt for each course in the list of courses where teacher teaches
+                    Service -> ExamRepository : findExamsOfCourse(course)
+                    alt for each exam in the list of exams of the course
+                        alt if exam status is 'CREATED'
+                            Service -> Service : examsAvailableForTeacher.add(exam)
+                        end
+                    end
+                end
+                Service --> Controller : list of exams available for teacher to update
+            deactivate Service
+            Controller --> UI
+        deactivate Controller
+        Actor <-- UI : shows avaliable exams list\nasks to choose exam to update
+        Actor -> UI : chooses exam to updatee
+        UI -> Controller : importFile(path)
+        activate Controller
+            Controller -> Service : importFile(path)
+            activate Service
+                Service --> Controller : file imported
+            deactivate Service
+            Controller --> UI : file imported
+        deactivate Controller
+        alt if file is not null
+            UI -> Controller : updateExam(exam, file)
+            activate Controller
+                Controller -> Service : updateExam(exam, file)
+                activate Service
+                Service -> Service : generateExam(course, file)
+                    Service -> EvalVisitor : buildExam(ParseTree tree, Course course)
+                    activate EvalVisitor
+                        note right of EvalVisitor : this is the same as specified above
+                        EvalVisitor --> Service : new exam generated
+                    deactivate EvalVisitor
+                    alt if newExam is not null and !examHasQuotationOf20(newExam))
+                        Service -> Service : deleteExam(exam)
+                        Service -> ExamRepository : save(newExam)
+                        Service -> Service : createExamEnrollments(newExam)
+                    end
+                    Service --> Controller : new exam generated
+                deactivate Service
+                Controller --> UI : new exam generated
+            deactivate Controller
+            alt if new exam is not null
+                UI --> Actor : shows the new exam created
+            else if new exam is null
+                UI --> Actor : informs about new exam not being valid
+            end
+        else if file is null
+            UI --> Actor : informs about file not being valid
+        end
+    end
+deactivate UI
+@enduml

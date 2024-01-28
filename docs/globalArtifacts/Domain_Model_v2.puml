@@ -1,0 +1,363 @@
+@startuml
+
+skinparam groupInheritance 0
+!theme amiga
+
+package User {
+
+abstract class User <<Aggregate Root>>{
+}
+
+class UserID <<Value Object>>{
+int: userID
+}
+
+class FullName <<Value Object>>{
+String: fullName
+}
+
+class ShortName <<Value Object>>{
+String: shortName
+}
+
+class BirthDate <<Value Object>> {
+        Date: birthDate
+}
+
+class TaxNumber <<Value Object>> {
+        Integer: taxNumber
+}
+
+class Email <<Value Object>> {
+    String: email
+}
+
+class Password <<Value Object>> {
+    String: password
+}
+
+User --* UserID
+User --* FullName
+User --* ShortName
+User --* BirthDate
+User --* Email
+User --* Password
+User --* TaxNumber
+
+}
+
+package Student {
+
+class Student <<Aggregate Root>> {
+}
+
+class MechanographicNumber <<Value Object>> {
+        Integer: mechanographicNumber
+}
+
+Student --* MechanographicNumber
+
+}
+
+package Teacher {
+
+class Teacher <<Aggregate Root>> {
+}
+
+class Acronym <<Value Object>>{
+    String: acronym
+}
+
+Teacher --* Acronym
+
+}
+
+package Manager {
+
+class Manager <<Aggregate Root>> {
+}
+
+}
+
+package Course {
+
+class Course <<Aggregate Root>> {
+            String: courseCode
+            String: description
+            Integer: minStudents
+            Integer: maxStudents
+            Teacher: teacherInCharge
+            Date: openCourseDate
+            Date: closeCourseDate
+            Date: openEnrollmentsDate
+            Date: closeEnrollmentsDate
+
+}
+
+
+class CourseName <<Value Object>> {
+    String: courseName
+}
+
+enum CourseStatus {
+        CLOSE
+        OPEN
+        ENROLL
+        IN_PROGRESS
+}
+
+Course ---* CourseName
+Course "1" ---> "1" CourseStatus: has >
+
+
+}
+
+package Class {
+
+class Class <<Aggregate Root>> {
+    String: classTitle
+    Integer: capacity
+    Date: dateOfCourseClass
+    String: weekDay
+    LocalTime: startTime
+    LocalTime: endTime
+}
+}
+
+package Enrollment {
+
+class Enrollment <<Aggregate Root>> {
+    Student: student
+    Course: course
+    Grade: courseGrade
+
+}
+
+class ExamEnrollment <<Entity>> {
+    String: examID
+    Enrollment: enrollment
+    Grade: examGrade
+}
+
+class EnrollmentStatus{
+   NOT ACCEPTED
+   UNDER APPRECIATION
+   ACCEPTED
+}
+
+enum ExamEnrollmentStatus {
+    ENROLLED
+    PRESENT
+    MISSED
+}
+
+class Grade {
+    float: grade
+}
+
+Enrollment ---* Grade
+ExamEnrollment ---* Grade
+Enrollment "1" ---> "1" EnrollmentStatus: has >
+ExamEnrollment "1" --> "1" ExamEnrollmentStatus: has >
+Enrollment "1" --> "*" ExamEnrollment : has
+
+}
+
+package Teaching {
+
+class Teaching <<Aggregate Root>>{
+    Teacher: teacher
+    Course: course
+    bool: isPrimary
+}
+
+}
+
+package Exam {
+
+class Exam <<Aggregate Root>> {
+String: examID
+String: title
+String: description
+Date: openDate
+Date: closeDate
+}
+
+enum ExamStatus {
+CREATED
+FINISHED
+}
+
+
+class Header <<Value Object>>{
+String: description
+}
+
+enum FeedbackType{
+NONE
+ON-SUBMISSION
+AFTER-CLOSING
+}
+
+enum GradeType{
+NONE
+ON-SUBMISSION
+AFTER-CLOSING
+}
+
+class Structure <<Value Object>> {
+    String: structure
+}
+
+class Language <<Value Object>> {
+    String: language
+}
+
+
+
+Structure *-- Exam
+Language *-- Exam
+Exam "1" --* "1" Header: has >
+Exam "1" --> "1" ExamStatus : has >
+Header "1" --> "1" GradeType: has >
+Header "1" --> "1" FeedbackType: has >
+
+}
+
+package Question {
+
+class Question <<Aggregate Root>> {
+String: questionGroup
+String: structure
+Integer: quotation
+}
+
+Exam "1" --> "*" Question
+}
+
+package SharedBoard {
+
+class SharedBoard <<Aggregate Root>>{
+    String: title
+    User: owner
+    int: numberOfRows
+    int: numberOfColumns
+}
+
+class SharedBoardInvitation{
+    int: inviteeID
+    SharedBoard: sharedBoard
+
+}
+
+
+class SharedBoardUpdate{
+    String: description
+    Date: updateDate
+}
+
+enum SharedBoardStatus {
+    OPEN
+    ARCHIVED
+}
+
+class Row <<Entity>> {
+    int: rowID
+    String: title
+}
+
+class Column <<Entity>> {
+    int: columnID
+    String: title
+}
+
+class Cell <<Entity>> {
+    String: cellID
+    int: rowNumber
+    int: columnNumber
+}
+
+enum UserPermission {
+    READ ONLY
+    WRITE
+}
+
+class PostIt <<Entity>>{
+    int: postItID
+    String: content
+    int: ownerID
+}
+
+class PostItHistory <<Entity>>{
+    PostIt: previousState
+    DateTime : timestamp
+}
+
+SharedBoard "1" --> "*" SharedBoardInvitation : has >
+SharedBoard "1" --> "*" SharedBoardUpdate : has >
+SharedBoardInvitation "1" --> "1" UserPermission : has >
+SharedBoard "1" --> "1" SharedBoardStatus : has >
+SharedBoard "1" --> "*" Row : has >
+SharedBoard "1" --> "*" Column : has >
+Row "1" --> "*" Cell : has >
+Column "1" --> "*" Cell : has >
+PostIt "1" --> "*" PostItHistory : has >
+Cell "1" -> "1" PostIt : contains >
+
+}
+
+package Meeting {
+
+class Meeting <<Aggregate Root>>{
+    String: description
+    LocalTime: startTime
+    LocalTime: endTime
+    DateInterval: timePeriod
+    Date: date
+    User: organizer
+}
+
+enum MeetingStatus{
+    CREATED
+    CANCELED
+}
+
+
+class MeetingInvitation <<Entity>>{
+    int: inviteeID
+    Meeting: meeting
+
+}
+
+enum MeetingInvitationStatus {
+    PENDING
+    ACCEPTED
+    DECLINED
+    CANCELED
+}
+
+Meeting "1" --> "*" MeetingInvitation : has >
+MeetingInvitation "1" -> "1" MeetingInvitationStatus : has >
+Meeting "1" -> "1" MeetingStatus : has >
+}
+
+
+User <|-- Manager
+User <|-- Teacher
+User <|-- Student
+
+Enrollment "*" --[thickness=4]-> "1" Student: are asked >
+Enrollment "*" -[thickness=4]--> "1" Course: is of >
+
+Course "1" -[thickness=4]--> "1..*" Exam : is composed of >
+Manager "1" -[thickness=4]--> "*" Enrollment : administrates >
+Manager "1" -[thickness=4]--> "*" Course: manages >
+Teacher "1" -[thickness=4]--> "*" Class : schedules >
+Teacher "1" -[thickness=4]--> "*" Exam: creates >
+User "1" -[thickness=4]-> "*" SharedBoard: creates >
+Teaching "1" -[thickness=4]--> "*" Teacher : is done by >
+Teaching "1" -[thickness=4]--> "*" Course : teaches in >
+Course "1" -[thickness=4]--> "*" Class: has >
+Class "1" -[thickness=4]--> "*" Student: has >
+User "1" -[thickness=4]-> "1" Meeting : schedules >
+@enduml

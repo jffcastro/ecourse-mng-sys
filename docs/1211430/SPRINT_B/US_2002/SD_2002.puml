@@ -1,0 +1,53 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+autonumber
+
+actor Student as Actor
+participant ListFutureExamsUI as UI <<presentation>>
+control ListFutureExamsController as Controller <<application>>
+participant ListFutureExamsService as Service <<service>>
+database ExamEnrollmentRepository as Repository <<repository>>
+database ExamRepository as ExamRepository <<repository>>
+participant Exam as Exam
+
+Actor -> UI : asks to list all the future exams
+activate UI
+    UI -> Controller : create
+    UI -> Controller : findListStudentFutureExams()
+
+    activate Controller
+
+    Controller -> Service : findListStudentFutureExams(student)
+    activate Service
+    Service -> Repository :findStudentExamEnrollmentsWithEnrolledStatus(Student student)
+    activate Repository
+    Repository-->Service: studentExamsEnrollments
+    deactivate Repository
+    loop (for each studentExamsEnrollments)
+    Service -> ExamRepository : findById(examEnrollment.examID())).get())
+    activate ExamRepository
+    ExamRepository--> Service : return exam
+    deactivate ExamRepository
+    alt if(exam.examStatus = ExamStatus.CREATED)
+        Service -> Service : studentFutureExams.add(exam)
+    end
+end
+Service --> Controller : return studentFutureExams
+    deactivate Service
+Controller--> UI: studentFutureExams
+deactivate Controller
+    UI -> UI: output Student Future Exams List
+    UI -->  Actor : returns the list with all the future exams
+
+deactivate UI
+
+
+
+
+@enduml
+

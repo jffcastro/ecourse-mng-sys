@@ -1,0 +1,85 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor User as Actor
+participant ViewMeetingInvitesUI as UI <<presentation>>
+control ViewMeetingInvitesController as ViewMeetingInvitesController <<application>>
+database MeetingRepository as MeetingRepository <<repository>>
+database MeetingInvitationRepository as MeetingInvitationRepository <<repository>>
+
+Actor -> UI: Wants to view the list of the participants in a \n meeting and the status (accepted or rejected)
+activate UI
+    UI ->  ViewMeetingInvitesController **: create()
+
+    UI --> Actor: Asks if he wants to see the participants of one \n meeting that he created or one that he accept the invite
+    Actor -> UI: Selects option
+
+    alt if option is meeting he created
+
+        UI -> ViewMeetingInvitesController : listMeetingsOfUser(user)
+            activate ViewMeetingInvitesController
+
+        ViewMeetingInvitesController -> MeetingRepository : findMeetingsNotCanceledOfUser(user)
+        activate MeetingRepository
+        MeetingRepository --> ViewMeetingInvitesController
+        deactivate MeetingRepository
+        ViewMeetingInvitesController --> UI
+        deactivate ViewMeetingInvitesController
+        alt if meeting list is not null
+            UI --> Actor: Ask user to choose the meeting
+            Actor -> UI: Selects Meeting
+
+            UI-> ViewMeetingInvitesController: listMeetingInvitation(meeting)
+            activate ViewMeetingInvitesController
+            ViewMeetingInvitesController -> MeetingInvitationRepository: findByIdAndWithAcceptedAndRejectedStatus(meeting)
+            activate MeetingInvitationRepository
+            MeetingInvitationRepository --> ViewMeetingInvitesController
+            deactivate MeetingInvitationRepository
+            ViewMeetingInvitesController --> UI
+            deactivate ViewMeetingInvitesController
+
+            alt if list of meeting invites is not null
+            UI --> Actor: display list of meeting invites
+
+            else if list of meeting invites is null
+            UI --> Actor: informs that there are no invites for that meeting
+            end
+
+        else if meeting list is null
+        UI--> Actor: informs that he has no meetings
+        end
+    else if option is meeting he accepted the invite
+        UI -> ViewMeetingInvitesController: listMeetingWhereUserIs(user)
+        activate ViewMeetingInvitesController
+            ViewMeetingInvitesController -> MeetingInvitationRepository: findMeetingInvitationOfUserWithStatusAccepted(user)
+            activate MeetingInvitationRepository
+            MeetingInvitationRepository --> ViewMeetingInvitesController
+            deactivate MeetingInvitationRepository
+            ViewMeetingInvitesController --> UI
+        deactivate ViewMeetingInvitesController
+        alt if meeting invitation list is not null
+            UI --> Actor: Asks to choose a meeting
+            Actor -> UI : Selects Meeting
+
+            UI-> ViewMeetingInvitesController: listMeetingInvitation(meeting)
+            activate ViewMeetingInvitesController
+                ViewMeetingInvitesController -> MeetingInvitationRepository: findByIdAndWithAcceptedAndRejectedStatus(meeting)
+                activate MeetingInvitationRepository
+                    MeetingInvitationRepository --> ViewMeetingInvitesController
+                deactivate MeetingInvitationRepository
+                ViewMeetingInvitesController --> UI
+            deactivate ViewMeetingInvitesController
+
+            UI --> Actor: display list of meeting invites
+
+            else if meeting invitation list is null
+                UI--> Actor: informs that he has no meetings
+            end
+    end
+
+
+@enduml

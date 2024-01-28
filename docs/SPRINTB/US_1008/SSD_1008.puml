@@ -1,0 +1,12 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+autonumber
+
+actor Manager as Actor
+
+Actor -> System: asks to enroll in a course
+Actor <-- System: shows available courses list\nasks to choose course
+Actor -> System: chooses course
+Actor <-- System : informs about operation success
+
+@enduml

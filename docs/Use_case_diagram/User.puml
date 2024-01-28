@@ -1,0 +1,12 @@
+@startuml
+
+:User: as User
+:Manager: as Manager
+:Student: as Student
+:Teacher: as Teacher
+
+User <|--- Manager
+User <|--- Student
+User <|--- Teacher
+
+@enduml

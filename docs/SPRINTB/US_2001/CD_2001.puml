@@ -1,0 +1,85 @@
+@startuml
+
+class CreateUpdateExamUI <<UI>> {
+}
+
+class CreateUpdateExamController <<Controller>> {
+    + File : importFile(path)
+    + Exam : createExam(file)
+    + Iterable<Exam> : findExamsAvailableForTeacher()
+    + Exam : updateExam(exam, file)
+}
+
+class CreateUpdateExamService {
+    + File : importFile(path)
+    + Exam : createExam(file)
+    + Iterable<Exam> : findExamsAvailableForTeacher()
+    + Exam : updateExam(exam, file)
+    + Exam : generateExam(file, course)
+}
+
+class EvalVisitor <<Visitor>> {
+    + Exam : buildExam(tree, course)
+}
+
+class ExamBuilder <<Builder>> {
+    + ExamBuilder : ofCourse(course)
+    + ExamBuilder : withTitle(title)
+    + ExamBuilder : withDescription(description)
+    + ExamBuilder : withOpenDate(openDate)
+    + ExamBuilder : withCloseDate(closeDate)
+    + ExamBuilder : withLanguage(language)
+    + ExamBuilder : withStructure(structure)
+    + ExamBuilder : withHeader(header)
+    + Exam : build()
+}
+
+class HeaderBuilder <<Builder>> {
+    + HeaderBuilder : withDescription(headerDescription)
+    + HeaderBuilder : withFeedbackType(feedbackType)
+    + HeaderBuilder : withGradeType(gradeType)
+    + Header : build()
+}
+
+class Exam <<Domain>> {
+    - Long : examID
+    - Course : course
+    - String : description
+    - Date : openDate
+    - Date : closeDate
+    - Language : language
+    - Header : header
+    - Structure : structure
+    - ExamStatus : ExamStatus
+}
+
+class Header <<Domain>> {
+    - String : description
+    - FeedbackType : feedbackType
+    - HeaderType : headerType
+    }
+
+class ExamRepository {
+    + boolean : existsByTitle(title)
+    + Iterable<Exam> : findExamsOfCourse(course)
+    + void : save (exam)
+    + void : delete (exam)
+}
+
+class ListAvailableCoursesController <<Controller>> {
+    + Iterable<Course> : listCoursesAvailableForTeacher()
+}
+
+
+CreateUpdateExamUI ..> CreateUpdateExamController
+CreateUpdateExamController ..> CreateUpdateExamService
+CreateUpdateExamService --> ListAvailableCoursesController
+CreateUpdateExamService --> ExamRepository
+ExamRepository --> Exam : saves
+CreateUpdateExamService --> EvalVisitor
+EvalVisitor --> ExamBuilder
+ExamBuilder --> Exam : creates >
+EvalVisitor --> HeaderBuilder
+HeaderBuilder --> Header : creates >
+
+@enduml

@@ -1,0 +1,127 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor Student as Actor
+participant TakeExamUI as UI <<presentation>>
+control TakeExamController as Controller <<application>>
+database ExamEnrollmentRepository as ExamEnrollmentRepository <<repository>>
+participant CommonTakeExamUI as CommonTakeExamUI <<presentation>>
+control CommonTakeExamController as CommonTakeExamController <<application>>
+control CommonTakeExamService as CommonTakeExamService <<application>>
+control TakeExamEvalVisitor as TakeExamEvalVisitor <<visitor>>
+entity Exam as Exam <<domain>>
+entity Section as Section <<domain>>
+entity Question as Question <<domain>>
+entity ExamEnrollment as ExamEnrollment <<domain>>
+
+Actor -> UI : asks to take exam
+activate UI
+    UI -> Controller : findExamsAvailableForStudentToTake()
+    activate Controller
+        Controller -> ExamEnrollmentRepository : findIdsOfExamAvailableForStudentToTake(student)
+        activate ExamEnrollmentRepository
+            ExamEnrollmentRepository --> Controller : list of exams available for student
+        deactivate ExamEnrollmentRepository
+        Controller --> UI : list of exams available for student
+    deactivate Controller
+
+    alt if list of exams available for student is not empty
+        UI --> Actor : asks to select one exam
+        Actor -> UI : selects on exam
+        UI -> CommonTakeExamUI : takeExam(exam)
+    deactivate UI
+    activate CommonTakeExamUI
+        CommonTakeExamUI --> Actor : asks if student wants to do the\n exam manually or import a file
+        Actor -> CommonTakeExamUI : selects option
+        alt if option is manual
+            CommonTakeExamUI -> Exam : sections()
+            activate Exam
+                Exam --> CommonTakeExamUI : sections
+            deactivate Exam
+            loop for each section in section list
+                CommonTakeExamUI --> Actor : shows section information
+                CommonTakeExamUI -> Section : questions()
+                activate Section
+                    Section --> CommonTakeExamUI : questions
+                deactivate Section
+                loop for each question in question list
+                    CommonTakeExamUI --> Actor : shows question and asks for student to answer
+                    Actor -> CommonTakeExamUI : answers question
+                    CommonTakeExamUI -> CommonTakeExamController : correctQuestion(question, studentAnswer)
+                    activate CommonTakeExamController
+                        CommonTakeExamController -> CommonTakeExamService : correctQuestion(question, studentAnswer)
+                        activate CommonTakeExamService
+                            CommonTakeExamService -> Question : answer()
+                            activate Question
+                                Question --> CommonTakeExamService : answer
+                            deactivate Question
+                            CommonTakeExamService --> CommonTakeExamController : return if question is correct or not (true or false)
+                        deactivate CommonTakeExamService
+                        CommonTakeExamController --> CommonTakeExamUI : return if question is correct or not (true or false)
+                    deactivate CommonTakeExamController
+                    alt if question is correct
+                        CommonTakeExamUI -> Question : quotation()
+                        activate Question
+                            Question --> CommonTakeExamUI : quotation
+                        deactivate Question
+                        CommonTakeExamUI -> CommonTakeExamUI : grade+= questionQuotation
+                    end
+                    CommonTakeExamUI --> Actor : inform about exam finished
+                end
+            end
+        else if option is by file
+            CommonTakeExamUI --> Actor : shows exam sections and questions
+            CommonTakeExamUI --> Actor : asks for file path
+            Actor -> CommonTakeExamUI : inserts file path
+            CommonTakeExamUI -> CommonTakeExamController : importFile(path)
+            activate CommonTakeExamController
+                CommonTakeExamController -> CommonTakeExamService : importFile()
+                activate CommonTakeExamService
+                    CommonTakeExamService --> CommonTakeExamController : file imported
+                deactivate CommonTakeExamService
+                CommonTakeExamController --> CommonTakeExamUI : file imported
+            deactivate CommonTakeExamController
+            alt if file is not null
+                CommonTakeExamUI -> CommonTakeExamController : correctExamByFile(exam,file)
+                activate CommonTakeExamController
+                    CommonTakeExamController -> CommonTakeExamService : correctExamByFile(exam,file)
+                    activate CommonTakeExamService
+                        CommonTakeExamService -> TakeExamEvalVisitor : correctExam(exam, file)
+                        activate TakeExamEvalVisitor
+                            note left of TakeExamEvalVisitor : this part is related to ANTLR
+                            TakeExamEvalVisitor --> CommonTakeExamService : student grade
+                        deactivate TakeExamEvalVisitor
+                        CommonTakeExamService --> CommonTakeExamController : student grade
+                    deactivate CommonTakeExamService
+                    CommonTakeExamController --> CommonTakeExamUI : student grade
+                deactivate CommonTakeExamController
+                CommonTakeExamUI --> Actor : inform about exam finished
+            else if file is null
+                CommonTakeExamUI --> Actor : informs about file not valid
+            end
+        end
+        CommonTakeExamUI --> UI : student grade
+    deactivate CommonTakeExamUI
+    activate UI
+    UI -> Controller : saveStudentGradeInExam(exam, grade)
+        activate Controller
+            Controller -> ExamEnrollmentRepository : findStudentEnrollmentInExam(student, exam)
+            activate ExamEnrollmentRepository
+                ExamEnrollmentRepository --> Controller : return student enrollment in exam
+            deactivate ExamEnrollmentRepository
+            Controller -> ExamEnrollment : changeGrade(grade)
+            Controller -> ExamEnrollment : changeExamEnrollmentStatusToPresent()
+            Controller -> ExamEnrollmentRepository : save (examEnrollment)
+        deactivate Controller
+        UI --> Actor : shows feedback
+        note right of Actor : this depends on the Grade Type:\nNone/On Submission/After Closing
+    else if list of exams available for student is empty
+        UI --> Actor : informs about no exams available to take
+    end
+deactivate UI
+@enduml

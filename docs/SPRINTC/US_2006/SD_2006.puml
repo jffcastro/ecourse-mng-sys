@@ -1,0 +1,58 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor Teacher as Actor
+participant ListExamGradesUI as UI <<presentation>>
+control ListExamGradesController as Controller <<application>>
+control ListAvailableCoursesController as ListAvailableCoursesController <<application>>
+database ExamRepository as ExamRepository <<repository>>
+database ExamEnrollmentRepository as ExamEnrollmentRepository <<repository>>
+
+Actor -> UI : asks to view list of grades of exam
+activate UI
+    UI -> Controller : findCoursesAvailableForTeacher()
+    activate Controller
+        Controller -> ListAvailableCoursesController : findCoursesAvailableForTeacher()
+        activate ListAvailableCoursesController
+            note right of ListAvailableCoursesController : this controller belongs to US 1006. Check documentation
+            ListAvailableCoursesController --> Controller : list of courses available for teacher
+        deactivate ListAvailableCoursesController
+        Controller --> UI : list of courses available for teacher
+    deactivate Controller
+    alt if course available for teacher list is not empty
+        UI --> Actor : asks to select one option\nview grades of a course/all courses
+        Actor -> UI : selects one option
+        alt if option is view grades of a course
+            UI --> Actor : ask to select a course
+            Actor -> UI : select a course
+            UI -> Controller : findGradesOfCourse(course)
+            activate Controller
+                Controller -> ExamEnrollmentRepository : findExamEnrollsOfCourse(course)
+                activate ExamEnrollmentRepository
+                    ExamEnrollmentRepository -> Controller : exam enrollments of course selected
+                deactivate ExamEnrollmentRepository
+                Controller --> UI : grades of course selected
+            deactivate Controller
+        else if option is view grades of all courses
+           loop for course in list of courses available
+            UI -> Controller : findGradesOfCourse(course)
+            activate Controller
+                Controller -> ExamEnrollmentRepository : findExamEnrollsOfCourse(course)
+                activate ExamEnrollmentRepository
+                    ExamEnrollmentRepository -> Controller : exam enrollments of course selected
+                deactivate ExamEnrollmentRepository
+                Controller --> UI : grades of course selected
+            deactivate Controller
+            end
+        end
+    else if exams available for teacher list is empty
+        UI -> Actor : inform about no exams available
+    end
+deactivate UI
+
+@enduml

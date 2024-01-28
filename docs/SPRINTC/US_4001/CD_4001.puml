@@ -1,0 +1,147 @@
+@startuml
+
+class ScheduleMeetingUI {
+  + ScheduleMeetingUI():
+  # doShow(): boolean
+  - readTime(String): LocalTime
+  + headline(): String
+  - chooseUser(List<SystemUser>): SystemUser?
+}
+
+class CheckIfUserIsFreeService <<Service>> {
+    + checkIfUserIsFree(user, date) : boolean
+
+
+}
+class CheckIfUserIsFreeService {
+  + CheckIfUserIsFreeService():
+  - checkIfDatesCoincide(Date, LocalTime, LocalTime, List<CourseClass>, List<Meeting>, List<MeetingInvitation>): boolean
+  - isTimeOverlap(LocalTime, LocalTime, LocalTime, LocalTime): boolean
+  + checkIfUserIsNotFree(SystemUser, Date, LocalTime, LocalTime): boolean
+}
+
+class ScheduleMeetingController {
+  + ScheduleMeetingController():
+  + isDescriptionValid(String): boolean
+  + convertStringToDate(String): Date
+  + createMeetingInvitation(Meeting, MeetingInvitationStatus, SystemUser): void
+  + checkMeeting(SystemUser, Date, LocalTime, LocalTime): boolean
+  + getMeetingWithOrganizerAndDate(SystemUser, Date, String): Meeting
+  + createMeeting(String, Date, LocalTime, LocalTime, SystemUser): void
+  + isTimeRangeValid(LocalTime, LocalTime): boolean
+  + changeMeetingInvitations(Meeting, List<MeetingInvitation>): void
+  + getMeetingInvitationWithMeetingAndInvitee(Meeting, SystemUser): MeetingInvitation
+  + checkAndGetDate(String): Date
+   user: SystemUser
+   users: Iterable<SystemUser>
+}
+
+
+interface MeetingInvitationRepository << interface >> {
+  + findAll(): Iterable<MeetingInvitation>
+  + findMeetingInvitationOfUserWithStatusAccepted(SystemUser): Iterable<MeetingInvitation>
+  + findMeetingInvitationOfUserWithStatusPending(SystemUser): Iterable<MeetingInvitation>
+  + findMeetingInvitationOfUserWithStatusAcceptedOnDate(SystemUser, Date): Iterable<MeetingInvitation>
+  + findMeetingInvitationByMeetingAndUser(SystemUser, Meeting): MeetingInvitation
+}
+
+interface MeetingRepository << interface >> {
+  + findAll(): Iterable<Meeting>
+  + findMeetingByDateAndOrganizer(SystemUser, Date, String): Meeting
+  + findMeetingOfUserOnDate(SystemUser, Date): Iterable<Meeting>
+  + findMeetingOfUser(SystemUser): Iterable<Meeting>
+}
+
+
+
+class MeetingBuilder {
+  + MeetingBuilder():
+  + withDescription(String): MeetingBuilder
+  + withEndTime(LocalTime): MeetingBuilder
+  + withDate(Date): MeetingBuilder
+  + withStartTime(LocalTime): MeetingBuilder
+  + build(): Meeting
+  + withOrganizer(SystemUser): MeetingBuilder
+}
+
+
+class Meeting {
+  + Meeting(String, Date, LocalTime, LocalTime, SystemUser):
+  # Meeting():
+  - startTime: LocalTime
+  - endTime: LocalTime
+  - date: Date
+  - meetingInvitation: List<MeetingInvitation>
+  - validateMeetingTime(LocalTime, LocalTime): boolean
+  + sameAs(Object): boolean
+  - isDateAfterCurrentDate(Date): boolean
+  + description(): String
+  + hashCode(): int
+  + identity(): Long
+  + convertToTimePeriod(LocalTime, LocalTime): DateInterval
+  + organizer(): SystemUser
+  + meetingInvitation(): List<MeetingInvitation>
+  + toString(): String
+  + timePeriod(): DateInterval
+  + equals(Object): boolean
+   endTime: LocalTime
+   startTime: LocalTime
+   date: Date
+   meetingInvitation: List<MeetingInvitation>
+}
+
+
+enum MeetingInvitationStatus << enumeration >> {
+  + MeetingInvitationStatus():
+  + values(): MeetingInvitationStatus[]
+  + valueOf(String): MeetingInvitationStatus
+}
+
+class MeetingInvitation {
+  # MeetingInvitation():
+  + MeetingInvitation(MeetingInvitationStatus, Meeting, SystemUser):
+  - meeting: Meeting
+  - meetingInvitationStatus: MeetingInvitationStatus
+  + toString(): String
+  + declineMeeting(): MeetingInvitationStatus
+  + meeting(): Meeting
+  + sameAs(Object): boolean
+  + identity(): Long
+  + meetingInvitationStatus(): MeetingInvitationStatus
+  + inviteeID(): long
+  + equals(Object): boolean
+  + acceptMeeting(): MeetingInvitationStatus
+  + hashCode(): int
+   meeting: Meeting
+   meetingInvitationStatus: MeetingInvitationStatus
+}
+
+
+class MeetingInvitationBuilder {
+  + MeetingInvitationBuilder():
+  + withInvitee(SystemUser): MeetingInvitationBuilder
+  + withMeeting(Meeting): MeetingInvitationBuilder
+  + withMeetingInvitationStatus(MeetingInvitationStatus): MeetingInvitationBuilder
+  + build(): MeetingInvitation
+}
+
+
+ScheduleMeetingUI ..> ScheduleMeetingController
+ScheduleMeetingController ..> MeetingInvitationRepository
+ScheduleMeetingController ..> MeetingRepository
+ScheduleMeetingController ..> CheckIfUserIsFreeService
+ScheduleMeetingController ..> MeetingInvitationBuilder
+ScheduleMeetingController ..> MeetingBuilder
+
+MeetingInvitationRepository ..> MeetingInvitation
+MeetingRepository ..> Meeting
+MeetingInvitation ..> MeetingInvitationStatus
+MeetingInvitationBuilder ..> MeetingInvitation
+MeetingBuilder ..> Meeting
+Meeting ..> MeetingInvitation
+
+
+
+
+
+@enduml

@@ -1,0 +1,42 @@
+"
+autoexam;
+this is an autoexam;
+lang;
+header;
+ON_SUBMISSION;
+ON_SUBMISSION;
+<<
+    section1;
+    ??
+        1;
+        ShortQuestion
+    ??
+    ??
+        2;
+        MatchingQuestion
+    ??
+    ??
+        3;
+        ShortQuestion
+    ??
+>>
+<<
+    section2;
+    ??
+        1;
+        MultipleChoiceQuestion
+    ??
+    ??
+        2;
+        MissingWordQuestion
+    ??
+    ??
+        3;
+        NumericQuestion
+    ??
+    ??
+        4;
+        TrueFalseQuestion
+    ??
+>>
+"

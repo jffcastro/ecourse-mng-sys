@@ -1,0 +1,105 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor User as Actor
+participant SharedBoardUI as UI <<presentation>>
+control SharedBoardController as Controller <<application>>
+participant "theSharedBoard:SharedBoard" as SharedBoard <<domain>>
+participant "thePostIt:PostIt" as PostIt <<domain>>
+participant "Cell" as Cell <<domain>>
+database SharedBoardRepository as Repository <<repository>>
+
+Actor -> UI: doShow()
+activate UI
+    UI -> Controller: listSharedBoardsAvailableForUser(user)
+
+    activate Controller
+        Controller -> Repository: getSharedBoardsList()
+        activate Repository
+            Repository --> Controller: allSharedBoardsList
+        deactivate Repository
+
+        loop for (SharedBoard sharedBoard : allSharedBoardsList)
+            Controller -> SharedBoard: doesUserHasPermission(User)
+            activate SharedBoard
+                SharedBoard --> Controller: userHasPermission
+            deactivate SharedBoard
+        end
+            Controller --> UI: userSharedBoardsList
+    deactivate Controller
+
+    UI -> UI: output shared boards list
+
+    UI --> Actor: ask to select shared board
+    Actor -> UI: select shared board
+
+
+    UI -> UI: output shared board
+
+    UI -> Controller: getUserPermissionType(User, theSharedBoard)
+    activate Controller
+        Controller -> SharedBoard : getUserPermissionType(user)
+        activate SharedBoard
+            SharedBoard --> Controller : userPermission
+        deactivate SharedBoard
+        Controller --> UI : userPermission
+    deactivate Controller
+
+    UI --> Actor: ask user for shared board cell to edit
+    Actor -> UI: select shared board cell
+
+    alt if userPermission == WRITE
+        UI-->Actor: ask to select action
+        ''1. add post it
+        ''2. edit post it
+        Actor -> UI: select action
+
+        alt if action == addPostIt
+           UI-->Actor: asks for postit content
+           Actor -> UI: inserts postit content
+           UI -> Controller: createPostIt(content)
+           activate Controller
+               Controller -> PostIt: createPostIt(content, user)
+               activate PostIt
+                   PostIt --> Controller: thePostIt
+               deactivate PostIt
+               Controller -> SharedBoard : addPostIt(cell, thePostIt)
+           deactivate Controller
+        else if operation == editPostIt
+            UI-->Actor: ask to select operation
+            ''1. change content
+            ''2. change position
+            Actor -> UI: select operation
+            alt if operation == changeContent
+                UI-->Actor: asks for new postit description
+                '' assuming descripition is the content
+                Actor -> UI: inserts new postit description
+                UI -> Controller: changePostItDescription(thePostIt, description)
+                activate Controller
+                   Controller -> PostIt: changeDescription(description)
+                   activate PostIt
+                        PostIt -> PostIt: savePostItHistory()
+                deactivate Controller
+                UI-->Actor: informs about operation success
+                deactivate PostIt
+            else if operation == changePosition
+                UI-->Actor: asks for new cell position
+                Actor -> UI: select new cell position
+                UI->Controller: movePostIt(cell, newCell, postIt)
+                activate Controller
+                    Controller -> PostIt : movePostIt(oldCell, newCell)
+                deactivate Controller
+        end
+    end
+
+    Controller->Repository:save(theSharedBoard)
+    activate Controller
+    deactivate Controller
+
+     UI-->Actor: back to menu
+deactivate UI
+@enduml

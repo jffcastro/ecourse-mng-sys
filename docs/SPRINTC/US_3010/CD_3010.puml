@@ -1,0 +1,46 @@
+@startuml
+
+class ArchiveSharedBoardUI <<UI>> {
+}
+
+class ArchiveSharedBoardController <<Controller>> {
+    + boolean listSharedBoards (user)
+    + List<String> extractList(response)
+    + boolean: archiveSharedBoard(user, sharedBoard)
+}
+
+class TcpServerMessageHandler {
+     +void: findSharedBoardsOfOwner(version, data, out);
+     +void: archiveSharedBoard(version, data, out);
+}
+
+
+class UserRepository <<Repository>> {
+    + void: findById(user)
+}
+
+class SharedBoardRepository <<Repository>>{
+    + List<SharedBoard> findSharedBoardOfUser(user)
+    + SharedBoard: findSharedBoardById(id)
+    + void: save(sharedBoard)
+}
+
+class SharedBoard {
+    + String: getOwner
+    + void: setStatus(status)
+}
+
+
+
+
+
+
+ArchiveSharedBoardUI ..> ArchiveSharedBoardController
+ArchiveSharedBoardController ..> TcpServerMessageHandler
+TcpServerMessageHandler..>SharedBoardRepository
+TcpServerMessageHandler .left> UserRepository
+TcpServerMessageHandler ..> SharedBoard
+
+
+
+@enduml

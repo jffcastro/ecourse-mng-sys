@@ -1,0 +1,12 @@
+??
+MatchingQuestion;
+
+match the translation;
+cao, gato;
+cat, dog;
+
+cao->dog,
+gato->cat;
+
+2
+??

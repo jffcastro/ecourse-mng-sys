@@ -1,0 +1,37 @@
+@startuml
+
+class RequestEnrollmentUI <<UI>> {
+}
+
+class RequestEnrollmentController <<Controller>> {
+    + Iterable<Course> : listCoursesWhereStudentCanEnroll(coursesWhereStudentIsEnroll)
+    + Iterable<Course> : removeCoursesWhereStudentIsAlreadyEnrolled(coursesWhereStudentIsEnroll, oursesWhereStudentCanEnroll)
+    + void : createEnrollment(course)
+}
+
+class CourseRepository <<Repository>> {
+    + Iterable<Course> : findCourseListForStudentWhereHeCanEnroll()
+}
+
+class EnrollmentBuilder <<Builder>> {
+    + void : withEnrollmentStatus(enrollmentStatus)
+    + void : ofStudent(student)
+    + void : inCourse(course)
+    + Enrollment : build()
+}
+
+Class EnrollmentRepository <<Repository>>{
+    + void : save (newEnrollment)
+}
+
+Class StudentRepository <<Repository>>{
+    + Student : findBySystemUser(systemUser)
+}
+
+RequestEnrollmentUI ..> RequestEnrollmentController
+RequestEnrollmentController --> CourseRepository
+RequestEnrollmentController --> EnrollmentRepository
+RequestEnrollmentController --> StudentRepository
+RequestEnrollmentController --> EnrollmentBuilder
+
+@enduml

@@ -1,0 +1,35 @@
+@startuml
+
+class CreateCourseUI <<UI>> {
+}
+
+class CreateCourseController <<Controller>> {
+    + void: createCourse(courseCode, courseName, description, minStudents, maxStudents)
+    + boolean: validateCourseCode(courseCode)
+    + boolean: validateCourseName(courseName)
+    + boolean: validateCourseDescription(description)
+    + boolean: validateMinStudents(minStudents)
+    + boolean: validateMaxStudents(minStudents, maxStudents)
+
+}
+
+class CourseRepository <<Repository>> {
+    + void: save(newCourse)
+}
+
+
+
+class CourseBuilder <<builder>> {
+    + void: withCode(courseCode)
+    + void: withName(courseName)
+    + void: withDescription(description)
+    + void: hasMinStudents(minStudents)
+    + void: hasMaxStudents(maxStudents)
+    + void: build()
+}
+
+CreateCourseUI ..> CreateCourseController
+CreateCourseController ..> CourseRepository
+CreateCourseController ..> CourseBuilder
+
+@enduml

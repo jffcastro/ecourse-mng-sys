@@ -1,0 +1,87 @@
+@startuml
+
+class ChangePostItUI <<UI>> {
+}
+
+class ChangePostItController <<Controller>> {
+    + boolean listSharedBoards (user)
+    + boolean listCells (sharedBoardName)
+    + boolean listPostIts (user, sharedBoard)
+    + List<String> extractList(response)
+    + List<String> extractCellList(response)
+    + List<String> extractPostItList(response)
+}
+
+class TcpServerMessageHandler {
+     +void: findSharedBoardsOfUser(version, data, out)
+     +void: findFreeCells(version, data, out);
+     +void: findPostIt(version,data,out)
+     +void: movePostItToOtherCell(version, data, out);
+}
+
+
+class UserRepository <<Repository>> {
+    + void: findById(user)
+}
+
+class SharedBoardRepository <<Repository>>{
+    + List<SharedBoard> findSharedBoardOfUser(user)
+    + List<SharedBoard> findSharedBoardsAvailableForUser(user)
+    + SharedBoard: findSharedBoard(sharedBoardTitle)
+}
+
+class CellRepository <<Repository>>{
+    + void: save(cell)
+    + void: findCell(rowTitle, columnTitle)
+    + List<Cell> findAllFreeCellsFromSharedBoard(sharedBoard)
+}
+
+class Cell <<Entity>>{
+    String: cellID
+    int: rowNumber
+    int: columnNumber
+    boolean: isFree
+
+    +void: changeTheFreeStatus(isFree)
+}
+
+class PostItRepository <<Repository>>{
+    + List<PostIt> findPostItsFromSharedBoard(sharedBoard, user)
+    + PostIt: findPostIt(cell)
+    + void: save(postIt)
+}
+
+class PostItHistoryBuilder <<builder>>{
+    +withPostIt(postIt)
+    +withTimeStamp(timeStamp)
+    +withOldContent(content)
+    +withOldCell(oldCell)
+    +withNewContent(newContent)
+    +withNewCell(newCell)
+    +build()
+}
+
+class PostIt <<Entity>>{
+    Long: postItID
+    String: content
+    SystemUser: owner
+    Cell: cell
+
+    +changeCell(cell)
+    +changeContent(content)
+}
+
+
+
+ChangePostItUI ..> ChangePostItController
+ChangePostItController ..> TcpServerMessageHandler
+TcpServerMessageHandler..>SharedBoardRepository
+TcpServerMessageHandler .left> UserRepository
+TcpServerMessageHandler...>CellRepository
+TcpServerMessageHandler...>PostItRepository
+TcpServerMessageHandler..>PostItHistoryBuilder
+CellRepository-->Cell : has >
+PostItRepository-->PostIt : has >
+
+
+@enduml

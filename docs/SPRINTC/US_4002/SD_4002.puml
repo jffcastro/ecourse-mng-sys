@@ -1,0 +1,59 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+autonumber
+
+actor User as User
+participant CancelMeetingUI as UI <<presentation>>
+control CancelMeetingController as Controller <<application>>
+database MeetingRepository as MeetingRepository <<repository>>
+database MeetingInvitationRepository as MeetingInvitationRepository <<repository>>
+participant "theMeeting :Meeting" as  Meeting <<domain>>
+participant "theMeetingInvitation :MeetingInvitation" as  MeetingInvitation <<domain>>
+
+
+activate User
+User -> UI : wants to cancel meeting
+
+activate UI
+    UI -> Controller** : create()
+    UI-> Controller: findMeetingsAvailableToCancel(user)
+    activate Controller
+    Controller->MeetingRepository: findMeetingsAvailableToCancel(user)
+    activate MeetingRepository
+    MeetingRepository-->Controller: listMeetings
+    deactivate MeetingRepository
+    Controller --> UI: listMeetings
+    deactivate Controller
+    UI--> User: shows all meetings of the user
+    deactivate UI
+    User->UI: choose a meeting to cancel
+    activate UI
+    UI -> Controller : cancelMeeting(meeting)
+    activate Controller
+    Controller->Meeting: cancelMeeting()
+    Controller->MeetingRepository: save(meeting)
+    UI->Controller: cancelMeetingsInvitation(meeting)
+        Controller->MeetingInvitationRepository: findMeetingsInvitationOfMeeting(meeting)
+        activate MeetingInvitationRepository
+        MeetingInvitationRepository-->Controller: listMeetingsInvitation
+        deactivate MeetingInvitationRepository
+    loop for each MeetingInvitation meetingInvitation: listMeetingsInvitation
+        Controller->MeetingInvitation: changeMeetingInvitationStatusToCanceled(meetingInvitation)
+        Controller->MeetingInvitationRepository: save(meetingInvitation)
+    end
+    Controller-->UI: shows operations success
+    deactivate Controller
+    UI-->User: shows operations success
+    deactivate UI
+deactivate User
+
+
+
+
+@enduml
+

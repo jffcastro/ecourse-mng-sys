@@ -1,0 +1,71 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor User as Actor
+participant ViewBoardHistoryOfUpdatesUI as UI <<presentation>>
+control ViewBoardHistoryOfUpdatesController as Controller <<application>>
+participant TcpServerMessageHandler
+database UserRepository <<repository>>
+database SharedBoardRepository <<repository>>
+database SharedBoardUpdateRepository <<repository>>
+
+Actor -> UI: Asks to view list of updates of a board
+activate UI
+    UI -> Controller **: create()
+    UI -> Controller: listSharedBoards(username)
+    activate Controller
+        note right of Controller: request is created with the \nclass RequestMessage using \ncode SHARED_BOARDS_OF_USER(8)\n pass by parameter user
+        Controller -> TcpServerMessageHandler: send(request)
+        activate TcpServerMessageHandler
+            TcpServerMessageHandler -> UserRepository: findById(username)
+            activate UserRepository
+                UserRepository --> TcpServerMessageHandler: returns SystemUser
+            deactivate UserRepository
+            TcpServerMessageHandler -> SharedBoardRepository: findSharedBoardsOfUser(user)
+            activate SharedBoardRepository
+                SharedBoardRepository --> TcpServerMessageHandler: returns List<SharedBoard>
+            deactivate SharedBoardRepository
+            alt if(!availableSharedBoards.isEmpty)
+                alt for (SharedBoard list : availableSharedBoards)
+                    TcpServerMessageHandler -> TcpServerMessageHandler: sharedBoards += list.title()
+                end
+            end
+            deactivate SharedBoardRepository
+            note right of Controller: response is created with the \nclass RequestMessage using \ncode SEND_MESSAGE(6) pass \nby parameter String \navailableSharedBoards
+            TcpServerMessageHandler --> Controller: send(response)
+        deactivate TcpServerMessageHandler
+        Controller --> UI: returns list of shared boards string
+    deactivate Controller
+    UI --> Actor: Asks to select a shared board
+    Actor -> UI: Selects a shared board
+    UI -> Controller : findHistoryOfUpdatesOfSharedBoard(sharedBoard)
+    activate Controller
+        note right of Controller: request is created with the \nclass RequestMessage using \ncode HISTORY_SHAREBOARD(13)\n pass by parameter user
+        Controller -> TcpServerMessageHandler: send(request)
+        activate TcpServerMessageHandler
+            TcpServerMessageHandler -> SharedBoardRepository: findSharedBoard(title)
+            activate SharedBoardRepository
+                UserRepository --> SharedBoardRepository: returns shared board
+            deactivate SharedBoardRepository
+            TcpServerMessageHandler -> SharedBoardUpdateRepository : findUpdatesOfSharedBoard(sharedBoard)
+            activate SharedBoardUpdateRepository
+                SharedBoardUpdateRepository --> TcpServerMessageHandler : return list of shared board updates
+            deactivate SharedBoardUpdateRepository
+            alt if(!allPostItHistory.isEmpty)
+                alt for (PostItHistory list : allPostItHistory)
+                    TcpServerMessageHandler -> TcpServerMessageHandler: postIt += list.toString()
+                end
+            end
+        deactivate TcpServerMessageHandler
+        note right of Controller: response is created with the \nclass RequestMessage using \ncode SEND_MESSAGE(6) pass \nby parameter String \navailableSharedBoards
+        TcpServerMessageHandler --> Controller: send(response)
+    Controller --> UI: returns shared board updates history
+    deactivate Controller
+    UI -> Actor : shows shared board update history
+deactivate UI
+
+@enduml

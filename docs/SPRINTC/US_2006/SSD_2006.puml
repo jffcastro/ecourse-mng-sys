@@ -1,0 +1,21 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+actor Teacher as Actor
+
+autonumber
+
+Actor -> System : asks to view list of grades of exam
+alt if exams available for teacher list is not empty
+    Actor <-- System : asks to select on exam
+    Actor -> System : selects on exam
+    alt if exam grades list is not empty
+        Actor <-- System : output exam grades list
+    else if exam grades list is empty
+        Actor <-- System : inform about no grades for the exam selected
+    end
+else if exams available for teacher list is empty
+    Actor <-- System : inform about no exams available
+end
+
+@enduml

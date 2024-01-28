@@ -1,0 +1,56 @@
+@startuml
+actor Teacher as Actor
+boundary UI
+
+activate Actor
+
+Actor -> UI: Schedule a class
+activate UI
+UI --> Actor: Authorization status
+deactivate UI
+alt if authorized
+    UI --> Actor: Course list
+    activate UI
+    Actor -> UI: Course selection
+    deactivate UI
+    UI --> Actor: Asks for Class Title
+    activate UI
+    Actor -> UI: Class Title
+    deactivate UI
+    UI --> Actor: Asks for Class Weekday
+    activate UI
+    Actor -> UI: Weekday selection
+    deactivate UI
+
+    UI --> Actor: Asks for Class Star Date
+    activate UI
+
+    Actor -> UI: Class Start Date
+    deactivate UI
+    UI --> Actor: Asks for Class End Date
+    activate UI
+    Actor -> UI: Class End Date
+    deactivate UI
+    UI --> Actor: Asks for Class Start Time
+    activate UI
+    Actor -> UI: Class Start Time
+    deactivate UI
+    UI --> Actor: Asks for Class End Time
+    activate UI
+    Actor -> UI: Class End Time
+    deactivate UI
+    loop for number of weeks
+    alt if user is available
+
+        UI --> Actor: Class creation status
+        activate UI
+    else
+        UI --> Actor: Inform user is not available
+    end
+else
+end
+    UI --> Actor: Inform user is not authorized
+    deactivate UI
+end
+
+@enduml

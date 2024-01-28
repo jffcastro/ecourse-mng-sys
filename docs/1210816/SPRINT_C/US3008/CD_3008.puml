@@ -1,0 +1,79 @@
+@startuml
+
+class UndoPostItUI <<UI>> {
+}
+
+class UndoPostItController <<Controller>> {
+    + List<String> listSharedBoards (user)
+    + List<String> listPostIts (user, sharedBoard)
+    + List<String> extractList(response)
+    + List<String> extractPostItList(response)
+    + boolean undoPostIt
+}
+
+class TcpServerMessageHandler {
+     +void: findSharedBoardsOfUser(version, data, out)
+     +void: findPostIt(version,data,out)
+     +void: undoPostIt(version,data,out)
+}
+
+
+class UserRepository <<Repository>> {
+    + void: findById(user)
+}
+
+class SharedBoardRepository <<Repository>>{
+    + List<SharedBoard> findSharedBoardOfUser(user)
+    + List<SharedBoard> findSharedBoardsAvailableForUser(user)
+    + SharedBoard: findSharedBoard(sharedBoardTitle)
+}
+
+class CellRepository <<Repository>>{
+    + void: save(cell)
+}
+
+class Cell <<Entity>>{
+    String: cellID
+    int: rowNumber
+    int: columnNumber
+    boolean: isFree
+
+    +void: changeTheFreeStatus(isFree)
+}
+
+class PostItRepository <<Repository>>{
+    + List<PostIt> findPostItsFromSharedBoard(sharedBoard, user)
+    + PostIt: findPostItFromUserAndContentAndCell(username, content, row, column);
+    + PostIt: findPostIt(cell)
+    + void: save(postIt)
+    + void: delete(postIt)
+}
+
+class PostItHistoryRepository <<Repository>>{
+    + PostItHistory: findLastChangeOfPostIt(postIt)
+}
+
+class PostIt <<Entity>>{
+    Long: postItID
+    String: content
+    SystemUser: owner
+    Cell: cell
+
+    +changeCell(cell)
+    +changeContent(content)
+}
+
+
+
+UndoPostItUI ..> UndoPostItController
+UndoPostItController ..> TcpServerMessageHandler
+TcpServerMessageHandler..>SharedBoardRepository
+TcpServerMessageHandler .left> UserRepository
+TcpServerMessageHandler...>CellRepository
+TcpServerMessageHandler...>PostItRepository
+CellRepository-->Cell : has >
+PostItRepository-->PostIt : has >
+TcpServerMessageHandler..>PostItHistoryRepository
+
+
+@enduml

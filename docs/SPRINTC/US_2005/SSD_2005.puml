@@ -1,0 +1,11 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+Actor -> System: Authentication Request
+System --> Actor: Authentication Response
+
+Actor -> System: Wants to view his grades
+System --> Actor: display the list
+@enduml

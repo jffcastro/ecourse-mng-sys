@@ -1,0 +1,56 @@
+@startuml
+
+class CreateUpdateQuestionUI <<UI>> {
+}
+
+class CreateUpdateQuestionController <<Controller>> {
+    + File : importFile(path)
+    + Iterable<Question> : findAllQuestions()
+    + Question : createQuestion(file)
+    + Question : updateQuestion(question, file)
+}
+
+class CreateUpdateQuestionService {
+    + File : importFile(path)
+    + Question : createQuestion(file)
+    + Question : updateQuestion(question, file)
+    + Question : generateQuestion(file)
+}
+
+class EvalVisitor <<Visitor>> {
+    + Question : buildQuestion(tree)
+}
+
+class QuestionBuilder {
+    + QuestionBuilder: ofGroup(group)
+    + QuestionBuilder: withStructure(structure)
+    + QuestionBuilder: withQuotation(quotation)
+    + Question: build()
+}
+
+class QuestionRepository <<Repository>> {
+    + Iterable<Questions>: findAll()
+    + boolean: existsByStructure(structure)
+    + void: save(question)
+    + void: delete(question)
+}
+
+class Question <<Entity>> {
+        - String: questionGroup
+        - String: structure
+        - Integer quotation
+}
+
+
+
+CreateUpdateQuestionUI ..> CreateUpdateQuestionController
+CreateUpdateQuestionController ..> CreateUpdateQuestionService
+CreateUpdateQuestionService --> QuestionRepository
+QuestionRepository --> Question : saves >
+CreateUpdateQuestionService --> EvalVisitor
+EvalVisitor --> QuestionBuilder
+QuestionBuilder --> Question : creates>
+
+
+
+@enduml

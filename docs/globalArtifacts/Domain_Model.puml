@@ -1,0 +1,457 @@
+@startuml
+skinparam linetype ortho
+top to bottom direction
+
+class Email <<Value Object>> {
+    String: email
+}
+
+class Password <<Value Object>> {
+    String: password
+}
+
+package services #B9D7F5{
+class AuthenticationService {
+    Email: email
+    Password: password
+    WorkSession: session
+}
+
+class WorkSession {
+    Time: period
+    User: user
+}
+
+
+AuthenticationService --> Email
+AuthenticationService --> Password
+
+class ChooseTeachersService {
+    List<Teacher>: defineCourseTeachers()
+}
+
+class ManageCourseService {
+    Boolean: openOrCloseCourse()
+}
+
+class EnrollStudentsService {
+    Boolean: bulkEnroll()
+    Boolean: openOrCloseCourseEnrollments()
+    Boolean: approveCourseEnlistment()
+}
+
+class RequestEnrollmentService {
+    Boolean: requestEnrollmentInCourse()
+}
+
+class TakeExamService {
+    Exam: takeExam()
+}
+
+class LessonSchedulingService {
+    Lesson: scheduleExtraLesson()
+    Lesson: updateScheduledLesson()
+    Lesson: scheduleLesson()
+}
+
+class SharedBoardService {
+    Boolean: shareBoard()
+    SharedBoard: viewBoard()
+    SharedBoard: archiveSharedBoard()
+}
+
+class PostItService {
+    PostIt: updatePostIt()
+    PostIt: undoPostItUpdate()
+}
+}
+
+package users #E6F595 {
+
+
+    class TaxNumber <<Value Object>> {
+        Integer: taxNumber
+    }
+
+    class Acronym <<Value Object>>{
+        String: acronym
+    }
+
+    class MechanographicNumber <<Value Object>> {
+        Integer: mechanographicNumber
+    }
+
+    class FullName <<Value Object>> {
+        String: fullName
+    }
+
+    class ShortName <<Value Object>> {
+        String: shortName
+    }
+
+    class BirthDate <<Value Object>> {
+        Date: birthDate
+    }
+
+    abstract class User <<Aggreate Root>> {
+    }
+
+    User "1" -- "*" WorkSession: starts
+
+    User ---* FullName
+    User ---* ShortName
+    User ---* BirthDate
+    User ---* Email
+    User ---* Password
+    User ---* TaxNumber
+
+    User ---|> Manager
+    User ---|> Teacher
+    User ---|> Student
+
+
+    class Manager <<Entity>> {
+    }
+
+    class Teacher <<Entity>> {
+    }
+    Teacher ---* Acronym
+
+    class Student <<Entity>> {
+    }
+    Student ---* MechanographicNumber
+}
+
+
+package courses #B9D7F5 {
+    enum CourseStatus {
+        CLOSE
+        OPEN
+        ENROLL
+        IN_PROGRESS
+        CLOSED
+    }
+
+    class CourseID <<Value Object>> {
+        String: courseID
+    }
+
+    class CourseName <<Value Object>> {
+        String: courseName
+    }
+
+    class Course <<Aggreate Root>> {
+                Integer: minStudents
+                Integer: maxStudents
+                Teacher: responsible
+                List<Teacher>: teachers
+                List<Student>: students
+                Date: year
+    }
+
+    Course ---* CourseID
+    Course ---* CourseName
+
+    class StudentCourse <<Entity>>{
+        Student: student
+        Course: course
+    }
+
+    class CourseGrade <<Value Object>> {
+        Integer: grade
+    }
+
+    CourseGrade *--- StudentCourse
+
+class Class <<Entity>> {
+        String: title
+        DateTime: startTime
+        Integer: duration
+        Teacher: teacher
+        Course: course
+        List<Student>: student
+}
+}
+
+
+package exams #B9D7F5{
+
+class Title <<Value Object>> {
+    String: title
+}
+class Structure <<Value Object>> {
+    String: structure
+}
+class Language <<Value Object>> {
+    String: language
+}
+
+class Exam <<Aggreate Root>>{
+String: description
+Date: openDate
+Date: closeDate
+List<Section>: sections
+Teacher: teacher
+Exam Status: status
+}
+
+class Header <<Entity>>{
+Exam: exam
+String: description
+FeedbackType: feedbackType
+GradeType: gradeType
+}
+
+enum FeedbackType{
+NONE
+ON-SUBMISSION
+AFTER-CLOSING
+}
+
+enum GradeType{
+NONE
+ON-SUBMISSION
+AFTER-CLOSING
+}
+
+enum ExamStatus {
+CREATED
+FINISHED
+}
+
+class Section <<Entity>> {
+String: description
+List<Question>: questions
+}
+
+class ExamGrade <<Value Object>> {
+    Integer: grade
+}
+
+class StudentExam {
+Exam: exam
+Student: student
+StudentExamStatus : status
+}
+
+ExamGrade *--- StudentExam
+
+enum StudentExamStatus {
+    ENROLLED
+    PRESENT
+    MISSED
+}
+
+class StudentAnswer{
+      Question: question
+      Student: student
+      String: answer
+}
+
+class examQuestion{
+    Question: question
+    Quotation: quotation
+}
+}
+
+package question #B9D7F5 {
+
+class Question <<Aggreate Root>> {
+}
+
+class Multiple <<Entity>>{
+    String: question
+    List<String>: options
+}
+
+class Matching <<Entity>>{
+    List<String>: left
+    List<String>: right
+}
+
+class ShortAnswer <<Entity>>{
+    String: question
+}
+
+class Numeric <<Entity>>{
+    String: question
+}
+
+class TrueOrFalse <<Entity>>{
+    List<String>: questions
+}
+
+class MissingWords <<Entity>>{
+    String: text
+    List<List<String> : missingWordsChoice
+}
+}
+
+
+package enrollment #B9D7F5{
+    class Enrollment <<Aggreate Root>>{
+        Student: student
+        Course: course
+        EnrollmentStatus : status
+    }
+
+    enum EnrollmentStatus {
+        NOT ACCEPTED
+        UNDER APPRECIATION
+        ACCEPTED
+    }
+
+}
+package SharedBoards #B9D7F5{
+class SharedBoard <<Aggreate Root>>{
+    String: title
+    User: owner
+    List<userBoard> : users
+    List<SharedBoardHistory> : history
+    List<Column> : columns
+    List<Row> : rows
+
+}
+
+class SharedBoardHistory <<Entity>>{
+    SharedBoard: shareBoard
+    DateTime : updateTim
+    String: description
+}
+
+class Column <<Entity>> {
+    Integer : id
+    String: text
+    List<Cell> : cells
+}
+
+class Row <<Entity>> {
+    Integer : id
+    String: text
+    List<Cell> : cells
+}
+
+
+class userBoard <<Entity>>{
+    User: user
+    UserPermission: permission
+}
+
+enum SharedBoardStatus {
+    OPEN
+    ARCHIVED
+}
+
+enum UserPermission {
+    READ ONLY
+    WRITE
+}
+
+class Cell <<Entity>> {
+    List<PostIt> : postIts
+}
+
+class PostIt <<Entity>>{
+    String: text
+    User: owner
+}
+
+class PostItHistory <<Entity>>{
+    PostIt: postIts
+    DateTime : updateTime
+}
+}
+
+package Meeting #B9D7F5 {
+class Meeting <<Root>> {
+    User : owner
+    List<Invitation> : invitations
+    DateTime: scheduleDateTime
+    Integer : duration
+}
+
+class Invitation <<Entity>> {
+User: user
+Meeting: meeting
+Status: status
+}
+
+enum Status{
+ACCEPT
+NOT ACCEPT
+}
+}
+
+Teacher "1" --- "*" Class : schedules >
+Class "*" --- "1" Course : is of>
+
+Manager --- Enrollment : accept/not accept
+Manager --- Course: open enrollments >
+Manager "1" --- "*" Course: creates
+Teacher "1" --- "*" Course: manages >
+
+StudentCourse "1" --- "*" Student: is doing
+StudentCourse "1" --- "*" Course: is of
+CourseStatus "1" --- "1" Course: has
+
+Student "1" --- "*" Enrollment : asks to enroll >
+
+Enrollment "1" --- "1" EnrollmentStatus : has >
+
+Class "1" --- "1" Course: is of
+
+Exam "*" --- "1" Teacher : created by >
+Title *--- Exam
+Structure *--- Exam
+Language *--- Exam
+Student "1" --- "*" StudentExam : does
+StudentExam "*" --- "1" Exam : of >
+StudentExam "1" --- "*" StudentAnswer : has >
+Student "1" --- "*" StudentAnswer : answers >
+Exam "1" --- "*" Section : has >
+Section "1" --- "*" examQuestion : has >
+examQuestion "*" --- "1" Question : has >
+StudentExam "1" --- "*" StudentExamStatus : has >
+
+Exam "1" --- "1" Header: has >
+Exam "1" --- "1" ExamStatus : has >
+Header "1" --- "1" FeedbackType: has
+Header "1" --- "1" GradeType: has
+StudentAnswer "*" --- "1" Question : of
+Question  <|--- Multiple
+Question  <|--- Matching
+Question  <|--- ShortAnswer
+Question  <|--- Numeric
+Question  <|--- TrueOrFalse
+Question  <|--- MissingWords
+
+User "1" --- "*" PostIt : creates
+PostIt "1" --- "*" PostItHistory: has >
+User "1" --- "*" SharedBoard : creates
+SharedBoard "1" --- "1..*" Column : has
+SharedBoard "1" --- "1..*" Row : has
+SharedBoard "1" --- "*" SharedBoardHistory : has >
+SharedBoard "1" --- "*" userBoard
+userBoard "1" --- "1" UserPermission : has >
+SharedBoard "1" --- "1" SharedBoardStatus: has >
+Column "1" --- "1..*" Cell : has >
+Row "1" --- "1..*" Cell : has >
+Cell "1" --- "1..1" PostIt : has >
+
+User "1" --- "*" Meeting : schedules
+User "1" --- "*" Invitation : has
+User "1" --- "*" Invitation : sends
+Invitation "*" --- "1" Meeting : for >
+Invitation "*" -- "1" Status : has
+
+
+Manager "1" --- "*" ChooseTeachersService: will apply
+Manager "1" --- "*" EnrollStudentsService: will apply
+Manager "1" --- "*" ManageCourseService: will apply
+Student "1" --- "*" RequestEnrollmentService: will apply
+Student "1" --- "*" TakeExamService: will apply
+Teacher "1" --- "*" LessonSchedulingService: will apply
+User "1" --- "*" SharedBoardService: will apply
+User "1" --- "*" PostItService: will apply
+
+@enduml

@@ -1,0 +1,14 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+User -> System: Authentication Request
+System --> User: Authentication Response
+
+User -> System: Asks for permission
+User <-- System: Operation (in)success
+
+User -> System: Asks to list all the courses that are available to the User
+User <-- System: Returns the list with all the courses available to the User
+@enduml

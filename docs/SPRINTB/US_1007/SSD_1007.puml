@@ -1,0 +1,17 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+autonumber
+
+actor Manager as Actor
+
+Actor -> System: asks to bulk enroll students
+Actor <-- System: asks for file path
+Actor -> System: inserts file path
+
+alt if file is valid
+    Actor <-- System : informs about operation success
+else if file is not valid
+    Actor <-- System : informs about operation insuccess due to invalid file
+end
+
+@enduml

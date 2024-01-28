@@ -1,0 +1,14 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+autonumber
+
+actor Manager as Actor
+
+Actor -> System: asks to accept/reject enrollment requests
+Actor <-- System: shows enrollment requests list\nasks to choose enrollment requests
+Actor -> System: chooses enrollment requests
+Actor <-- System : asks to accept/reject enrollment requests
+Actor -> System : accept/reject enrollment requests
+Actor <-- System : informs about operation success
+
+@enduml

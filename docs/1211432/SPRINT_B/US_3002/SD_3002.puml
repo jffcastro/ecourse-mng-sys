@@ -1,0 +1,44 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+autonumber
+
+actor User as Actor
+participant CreateSharedBoardUI as UI <<presentation>>
+
+Actor -> UI: Create Shared Board
+activate UI
+    create control CreateSharedBoardController
+    UI -> CreateSharedBoardController: create()
+    UI --> Actor: Ask shared board information
+    Actor -> UI: title, maxNumberOfRows, \nmaxNumberOfColumns
+
+
+    UI -> CreateSharedBoardController: createSharedBoard(title, \nmaxNumberOfRows, maxNumberOfColumns)
+    activate CreateSharedBoardController
+        create participant SharedBoardBuilder as Builder <<builder>>
+        CreateSharedBoardController -> Builder: create()
+        CreateSharedBoardController -> Builder: withTitle(title)
+        CreateSharedBoardController -> Builder: ownedBy(owner)
+        CreateSharedBoardController -> Builder: hasMaxNumberOfRowns(maxNumberOfRows)
+        CreateSharedBoardController -> Builder: hasMaxNumberOfColumns(maxNumberOfColumns)
+        CreateSharedBoardController -> Builder: withInvitationList(List<SharedBoardInvitation> sharedBoardInvitationList)
+        CreateSharedBoardController -> Builder: withUpdateList(List<SharedBoardUpdate> sharedBoardUpdateList)
+        CreateSharedBoardController -> Builder: build()
+
+
+        database SharedBoardRepository as Repository <<repository>>
+        CreateSharedBoardController -> Repository: save(newSharedBoard)
+        activate Repository
+        Repository --> CreateSharedBoardController
+        deactivate Repository
+        CreateSharedBoardController --> UI
+    deactivate CreateSharedBoardController
+
+        UI-->Actor: Displays Shared Board Info
+deactivate UI
+@enduml

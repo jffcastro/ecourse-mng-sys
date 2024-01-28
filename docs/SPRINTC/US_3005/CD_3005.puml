@@ -1,0 +1,41 @@
+@startuml
+
+class ShareBoardClient{
+}
+
+class BrowserThread{
+}
+
+class ShareBoardClientController{
+    +String: listSharedBoards(user)
+    +String: findMySharedBoardInfo(sharedBoardTitle)
+}
+
+class TcpServerMessageHandler {
+    +void: findSharedBoardsForUser(version, data, out)
+    +void: mySharedBoard(version, data, out)
+}
+
+
+class UserRepository <<Repository>> {
+    + SystemUser: findById(user)
+}
+
+class SharedBoardRepository <<Repository>>{
+    + List<SharedBoard> findSharedBoardOfUser(user)
+    + SharedBoard : findSharedBoard(sharedBoard)
+}
+
+class SharedBoardInvitationRepository <<Repository>>{
+    + List<SharedBoard> findSharedBoardsUserWasInvite(user)
+}
+
+ShareBoardClient ..> BrowserThread
+BrowserThread..>ShareBoardClientController
+ShareBoardClientController-->TcpServerMessageHandler
+
+TcpServerMessageHandler-->UserRepository
+TcpServerMessageHandler-->SharedBoardRepository
+TcpServerMessageHandler-->SharedBoardInvitationRepository
+
+@enduml

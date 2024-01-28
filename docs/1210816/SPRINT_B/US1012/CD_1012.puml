@@ -1,0 +1,123 @@
+@startuml
+
+
+
+
+
+class ChangeClassSchedule {
+  + ChangeClassSchedule():
+  + headline(): String
+  - readTime(String): LocalTime
+  # doShow(): boolean
+}
+
+
+
+
+class CheckIfUserIsFreeService <<Service>> {
+    + checkIfUserIsFree(user, date) : boolean
+
+
+}
+
+
+
+
+
+
+
+class CourseClass{
+ -   classTitle: String
+ -   course: Course
+ -   dateOfCourseClass: Date
+ -   endTime: LocalTime
+ -   id: Long
+ -   startTime: LocalTime
+ -   students: List&lt;Student&gt;
+ -   teacher: Teacher
+ -   version: Long
+ -   weekDay: String
++ classTitle(): String
+- getDurationInMinutes(startTime: LocalTime, endTime
++ identity(): Long
+- isDateAfterCurrentDate(date: Date): boolean
++ isValidWeekday(weekday: String): boolean
++ sameAs(other: Object): boolean
+- validateClassTime(startTime: LocalTime, endTime:
+- validateTitle(title: String): boolean
+
+}
+
+
+
+class ChangeClassScheduleController {
+  + ChangeClassScheduleController():
+  + checkCourseClass(List<SystemUser>, String, Date, LocalTime, LocalTime): boolean
+  + checkDate(String): Date
+  + findClassOfTitleAndDate(String, Date): Iterable<CourseClass>
+  + checkAndGetDate(String): Date
+  + changeSchedule(CourseClass, Date, String, LocalTime, LocalTime): void
+  + getWeekdayFromDate(Date): String
+  + isTimeRangeValid(LocalTime, LocalTime): boolean
+   teacher: Teacher
+}
+
+
+
+
+
+
+
+
+class CourseClassBuilder {
+  + CourseClassBuilder():
+  + withDateOfCourseClass(Date): CourseClassBuilder
+  + withCourse(Course): CourseClassBuilder
+  + withTeacher(Teacher): CourseClassBuilder
+  + build(): CourseClass
+  + withStudents(List<Student>): CourseClassBuilder
+  + withWeekDays(String): CourseClassBuilder
+  + withClassTitle(String): CourseClassBuilder
+  + withStartTime(LocalTime): CourseClassBuilder
+  + withEndTime(LocalTime): CourseClassBuilder
+}
+
+
+
+class CheckIfUserIsFreeService {
+  + CheckIfUserIsFreeService():
+  - checkIfDatesCoincide(Date, LocalTime, LocalTime, List<CourseClass>, List<Meeting>, List<MeetingInvitation>): boolean
+  - isTimeOverlap(LocalTime, LocalTime, LocalTime, LocalTime): boolean
+  + checkIfUserIsNotFree(SystemUser, Date, LocalTime, LocalTime): boolean
+}
+
+
+
+
+interface CourseClassRepository << interface >> {
+  + findClassesOfStudent(Student): Iterable<CourseClass>
+  + findClassOfTitleAndDate(String, Date): Iterable<CourseClass>
+  + findClassesOfTeacherOnDate(Teacher, Date): Iterable<CourseClass>
+  + findClassesOfStudentOnDate(Student, Date): Iterable<CourseClass>
+  + findAllCourseClasses(): Iterable<CourseClass>
+  + findCourseClassByTitle(String): CourseClass
+  + findClassesOfTeacher(Teacher): Iterable<CourseClass>
+}
+
+
+
+
+
+
+ChangeClassSchedule ..> ChangeClassScheduleController
+ChangeClassScheduleController ..> CourseClassBuilder
+ChangeClassScheduleController ..> CourseClass
+ChangeClassScheduleController ..> CourseClassRepository
+ChangeClassScheduleController ..> CheckIfUserIsFreeService
+CheckIfUserIsFreeService ..> CourseClassRepository
+CourseClassRepository ..> CourseClass
+CourseClassBuilder ..> CourseClass
+
+
+
+@enduml

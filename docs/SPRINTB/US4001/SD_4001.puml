@@ -1,0 +1,236 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor User as Actor
+participant ScheduleMeetingUI as UI <<presentation>>
+control ScheduleMeetingController as Controller <<application>>
+participant MeetingInvitationBuilder as MeetingInvitationBuilder <<builder>>
+participant MeetingBuilder as MeetingBuilder <<builder>>
+participant "class:Meeting" as Meeting <<domain>>
+participant "class:MeetingInvitation" as MeetingInvitation <<domain>>
+
+
+participant CheckIfUserIsFreeService as CheckIfUserIsFreeService <<service>>
+participant AuthorizationService as AuthorizationService <<service>>
+participant AuthzRegistry as AuthzRegistry <<service>>
+
+database UserRepository as UserRepository <<repository>>
+database MeetingRepository as MeetingRepository <<repository>>
+database MeetingInvitationRepository as MeetingInvitationRepository <<repository>>
+participant PersistenceContext as PersistenceContext <<persistence>>
+
+activate Actor
+
+Actor -> UI: asks to schedule a meeting
+activate UI
+
+UI -> AuthzRegistry : checkAuthorization()
+activate AuthzRegistry
+AuthzRegistry -> AuthorizationService : authorizationService()
+deactivate AuthzRegistry
+activate AuthorizationService
+AuthorizationService -> UI : authorization
+deactivate AuthorizationService
+
+alt if authorization.isAuthenticatedUserAuthorizedTo(BaseRoles.TEACHER,BaseRoles.POWER_USER,\nBaseRoles.STUDENT,BaseRoles.MANAGER)
+UI -> Actor: asks for Meeting description
+
+Actor -> UI: provides Meeting description
+UI -> Controller: isDescriptionValid(description)
+activate Controller
+Controller -> UI: descriptionValidationResult
+deactivate Controller
+UI -> Actor: informs about descriptionValidationResult
+
+UI -> Actor: asks for Meeting date
+Actor -> UI: provides Meeting date
+UI -> Controller: checkAndGetDate(date)
+activate Controller
+Controller -> UI: dateValidationResult
+deactivate Controller
+UI -> Actor: informs about dateValidationResult
+UI -> Actor: asks for Meeting start time
+Actor -> UI: provides Meeting start time
+UI -> Actor: asks for Meeting end time
+Actor -> UI: provides Meeting end time
+UI -> Controller: isTimeRangeValid(startTime,endTime)
+activate Controller
+Controller -> UI: timeRangeValidationResult
+deactivate Controller
+UI -> Actor: informs about timeRangeValidationResult
+UI -> Controller: getUser()
+activate Controller
+Controller -> Controller: getAuthenticatedUser()
+Controller -> UI: organizer
+deactivate Controller
+
+alt if organizer not null
+UI -> Actor: informs about organizer
+
+UI -> Controller:checkMeeting(organizer,date,startTime,endTime)
+activate Controller
+Controller -> CheckIfUserIsFreeService: checkIfUserIsNotFree(user, date, startTime, endTime)
+
+activate CheckIfUserIsFreeService
+CheckIfUserIsFreeService -> PersistenceContext: findClassesOfUser(user)
+activate PersistenceContext
+activate ClassRepository
+PersistenceContext -> ClassRepository: findClassesOfUser(user)
+ClassRepository -> CheckIfUserIsFreeService: classes
+deactivate PersistenceContext
+deactivate ClassRepository
+CheckIfUserIsFreeService -> PersistenceContext: findMeetingsOfUser(user)
+activate PersistenceContext
+activate MeetingRepository
+PersistenceContext -> MeetingRepository: findMeetingsOfUser(user)
+MeetingRepository -> CheckIfUserIsFreeService: meetings
+deactivate PersistenceContext
+deactivate MeetingRepository
+CheckIfUserIsFreeService -> PersistenceContext: findMeetingInvitationsOfUser(user)
+activate PersistenceContext
+activate MeetingInvitationRepository
+PersistenceContext -> MeetingInvitationRepository: findMeetingInvitationsOfUser(user)
+MeetingInvitationRepository -> CheckIfUserIsFreeService: meetingInvitations
+deactivate PersistenceContext
+deactivate MeetingInvitationRepository
+
+
+CheckIfUserIsFreeService -> CheckIfUserIsFreeService: checkIfDatesCoincide(Date date, LocalTime startTime, LocalTime endTime,\nList<CourseClass> classLst, List<Meeting> meetLst,\n List<MeetingInvitation> meetInvLst)
+CheckIfUserIsFreeService -> Controller: isFree
+deactivate CheckIfUserIsFreeService
+deactivate PersistenceContext
+Controller -> UI: isFree
+deactivate Controller
+
+alt if User is free
+UI -> Controller: createMeeting(description, date, startTime, endTime, organizer)
+activate Controller
+Controller -> MeetingBuilder: build()
+activate MeetingBuilder
+MeetingBuilder -> Meeting: Meeting(description, date, startTime, endTime, organizer)
+activate Meeting
+
+Meeting -> Controller: meeting
+deactivate Meeting
+deactivate MeetingBuilder
+Controller -> UI: meeting
+deactivate Controller
+UI -> Actor: informs about meeting
+UI -> Controller: getUsers()
+activate Controller
+Controller -> PersistenceContext: findAllUsers()
+activate PersistenceContext
+activate UserRepository
+PersistenceContext -> UserRepository: findAllUsers()
+UserRepository -> Controller: users
+deactivate PersistenceContext
+deactivate UserRepository
+Controller -> UI: users
+deactivate Controller
+
+UI -> UI: add Users to a new List<SystemUsers> users
+
+alt if users not null
+UI -> UI: remove organizer from users
+loop while boolean keepAddingUsers = true
+UI -> UI: chooseUser(users)
+UI -> Actor: Asks for User
+Actor -> UI: selects User
+UI -> UI: adds user to a list of invitees
+end loop
+
+alt if invitees not null
+
+loop SystemUser invitee : invitees
+UI -> Controller:checkMeeting(invitee,date,startTime,endTime)
+activate Controller
+Controller -> CheckIfUserIsFreeService: checkIfUserIsNotFree(user, date, startTime, endTime)
+activate CheckIfUserIsFreeService
+CheckIfUserIsFreeService -> PersistenceContext: findClassesOfUser(user)
+activate PersistenceContext
+activate ClassRepository
+PersistenceContext -> ClassRepository: findClassesOfUser(user)
+ClassRepository -> CheckIfUserIsFreeService: classes
+deactivate PersistenceContext
+deactivate ClassRepository
+CheckIfUserIsFreeService -> PersistenceContext: findMeetingsOfUser(user)
+activate PersistenceContext
+activate MeetingRepository
+PersistenceContext -> MeetingRepository: findMeetingsOfUser(user)
+MeetingRepository -> CheckIfUserIsFreeService: meetings
+deactivate PersistenceContext
+deactivate MeetingRepository
+CheckIfUserIsFreeService -> PersistenceContext: findMeetingInvitationsOfUser(user)
+activate PersistenceContext
+activate MeetingInvitationRepository
+PersistenceContext -> MeetingInvitationRepository: findMeetingInvitationsOfUser(user)
+MeetingInvitationRepository -> CheckIfUserIsFreeService: meetingInvitations
+deactivate PersistenceContext
+deactivate MeetingInvitationRepository
+
+
+CheckIfUserIsFreeService -> CheckIfUserIsFreeService: checkIfDatesCoincide(Date date, LocalTime startTime, LocalTime endTime,\nList<CourseClass> classLst, List<Meeting> meetLst,\n List<MeetingInvitation> meetInvLst)
+CheckIfUserIsFreeService -> Controller: isFree
+deactivate CheckIfUserIsFreeService
+deactivate PersistenceContext
+Controller -> UI: isFree
+deactivate Controller
+
+alt if User is free
+UI -> Controller: createMeetingInvitation(meeting, MeetingInvitationStatus.PENDING, invitee)
+activate Controller
+Controller -> MeetingInvitationBuilder: build()
+activate MeetingInvitationBuilder
+MeetingInvitationBuilder -> MeetingInvitation: MeetingInvitation(meeting, MeetingInvitationStatus.PENDING, invitee)
+activate MeetingInvitation
+
+MeetingInvitation -> Controller: meetingInvitation
+deactivate MeetingInvitation
+deactivate MeetingInvitationBuilder
+Controller -> UI: meetingInvitation
+deactivate Controller
+UI -> Actor: informs about sucess
+end
+
+else
+UI -> Actor: informs that the user isn't free
+note right
+IGNORED MEETING INVITATION OF USER BECAUSE HE IS NOT FREE
+end note
+end
+UI -> Controller : changeMeetingInvitations(meeting, meetingInvitations)
+activate Controller
+Controller -> Meeting: setMeetingInvitations(meetingInvitations)
+activate Meeting
+Meeting -> Controller: meeting
+deactivate Meeting
+Controller -> PersistenceContext: saveMeeting(meeting)
+activate PersistenceContext
+activate MeetingRepository
+PersistenceContext -> MeetingRepository: saveMeeting(meeting)
+MeetingRepository -> Controller: meeting
+deactivate PersistenceContext
+deactivate MeetingRepository
+Controller -> UI: meeting
+deactivate Controller
+UI -> Actor: informs about meeting
+
+
+end
+end
+end
+end
+end
+
+
+
+
+
+
+deactivate UI
+@enduml

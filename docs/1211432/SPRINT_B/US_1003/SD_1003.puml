@@ -1,0 +1,88 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor Manager as Actor
+participant ChangeEnrollmentsStatusUI as UI <<presentation>>
+
+
+Actor -> UI: Wants to open or close enrollments
+activate UI
+    create control ChangeEnrollmentsStatusController
+    UI -> ChangeEnrollmentsStatusController : create()
+    UI --> Actor : Asks  if wants to OPEN \nor CLOSE enrollments
+deactivate UI
+Actor --> UI : selects option
+activate UI
+
+    database CourseRepository as CourseRepository <<repository>>
+    participant "theCourse:Course" as Domain <<domain>>
+
+    alt if option == OPEN
+    UI -> ChangeEnrollmentsStatusController: listOpenCourses()
+    activate ChangeEnrollmentsStatusController
+        ChangeEnrollmentsStatusController -> CourseRepository : findCoursesWithOpenStatus()
+        activate CourseRepository
+            CourseRepository --> ChangeEnrollmentsStatusController :
+        deactivate CourseRepository
+        ChangeEnrollmentsStatusController --> UI
+    deactivate ChangeEnrollmentsStatusController
+    alt if courses list is not empty
+       UI -> UI: output Courses List with Open status
+       UI --> Actor: Ask user to choose Course \nType Selection
+deactivate UI
+Actor --> UI: Select Course
+activate UI
+
+    UI --> Actor: ask for closing date
+    alt while date is not valid
+        Actor --> UI: insert closing date
+        UI -> ChangeEnrollmentsStatusController : validateDate(closeDate)
+        activate ChangeEnrollmentsStatusController
+            ChangeEnrollmentsStatusController --> UI
+        deactivate ChangeEnrollmentsStatusController
+        alt if date is valid
+            UI -> ChangeEnrollmentsStatusController : openEnrollments(course, endDateEnroll)
+            activate ChangeEnrollmentsStatusController
+                ChangeEnrollmentsStatusController -> Domain : openEnrollments(endDateEnroll)
+            deactivate ChangeEnrollmentsStatusController
+        else if date is not valid
+            UI --> Actor : informs about date not valid
+        end
+    else if course list is empty
+        UI --> Actor : inform there are no courses available to open the enrollments
+    end
+end
+
+    else if option == CLOSE
+        UI -> ChangeEnrollmentsStatusController: listEnrolCourses()
+        activate ChangeEnrollmentsStatusController
+            ChangeEnrollmentsStatusController -> CourseRepository : findCoursesWithEnrollStatus()
+            activate CourseRepository
+                CourseRepository --> ChangeEnrollmentsStatusController :
+            deactivate CourseRepository
+            ChangeEnrollmentsStatusController --> UI
+        deactivate ChangeEnrollmentsStatusController
+        alt if courses list is not empty
+            UI -> UI: output Courses List with Enroll status
+            UI --> Actor: Ask user to choose Course \nType Selection
+            Actor --> UI: Select Course
+            
+                UI -> ChangeEnrollmentsStatusController : closeEnrollments(course)
+                activate ChangeEnrollmentsStatusController
+                    ChangeEnrollmentsStatusController -> Domain : closeEnrollments()
+                deactivate ChangeEnrollmentsStatusController
+        else if course list is empty
+            UI --> Actor : inform there are no courses available to close the enrollments
+        end
+    end
+
+    ChangeEnrollmentsStatusController --> CourseRepository : save(course)
+    UI --> Actor : back to menu
+
+deactivate UI
+
+@enduml

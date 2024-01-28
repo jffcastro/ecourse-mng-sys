@@ -1,0 +1,79 @@
+@startuml
+
+class SetTeachersCourseUI <<UI>> {
+}
+
+class SetTeachersCourseController <<Controller>> {
+    + List<Course>: findCourseWithOpenStatus()
+    + List<Teacher> : findAllTeacher()
+    + List<Teacher> : findTeachersOfCourse(course)
+    + boolean : courseHasTeacherInCharge(course)
+    + void : saveTeacherInCharge(teacherInCharge)
+    + void : saveTeacher(teacher, course)
+}
+
+class CourseRepository <<Repository>> {
+    + List<Course>: findCourseWithOpenStatus()
+}
+
+class TeacherRepository <<Repository>> {
+    + List<Teacher> : findAll()
+}
+
+class TeachingRepository <<TeachingRepository>> {
+    + List<Teacher> : findTeachersOfCourse(course)
+    + Teacher : findTeacherInChargeOfCourse(course)
+    + void : save (teaching)
+}
+
+class TeachingBuilder <<Builder>> {
+    + void : ofTeacher(teacherInCharge)
+    + void : inCourse(course)
+    + void : asPrimary(true)
+    + Teaching : build()
+}
+
+
+class Course <<Entity>> {
+        - CourseID: courseID
+        - Integer: minStudents
+        - Integer: maxStudents
+        - Date: courseOpenDate
+        - Date: courseCloseDate
+        - Date: enrollmentOpenDate
+        - Date: enrollmentCloseDate
+}
+
+
+class Teacher <<Entity>> {
+}
+
+class Teaching <<Aggregate Root>>{
+    Teacher: teacher
+    Course: course
+    bool: isPrimary
+}
+
+class Acronym <<Value Object>>{
+    String: acronym
+}
+
+
+Teacher -* Acronym
+
+TeachingRepository --> Teaching: saves >
+TeachingBuilder --> Teaching : creates >
+
+
+SetTeachersCourseUI ..> SetTeachersCourseController
+SetTeachersCourseController ..> CourseRepository
+SetTeachersCourseController ..> TeacherRepository
+SetTeachersCourseController ..> TeachingBuilder
+SetTeachersCourseController ..> TeachingRepository
+
+SetTeachersCourseController ..> Course
+
+CourseRepository --> Course : saves >
+TeacherRepository --> Teacher : saves >
+
+@enduml

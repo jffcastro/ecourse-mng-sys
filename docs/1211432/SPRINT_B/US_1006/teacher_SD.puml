@@ -1,0 +1,30 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+autonumber
+
+actor Teacher as Actor
+participant listAvailableCoursesUI as UI <<presentation>>
+control listAvailableCoursesController as Controller <<application>>
+
+Actor -> UI: Wants to see the courses available to him
+activate UI
+    create control listAvailableCoursesController
+    UI -> listAvailableCoursesController: create()
+    UI -> listAvailableCoursesController: listCoursesAvailableForTeacher
+    activate listAvailableCoursesController
+        database TeachingRepository as Repository <<repository>>
+        listAvailableCoursesController -> Repository: findCoursesWhereTeacherTeaches(teacher)
+        activate Repository
+            Repository --> listAvailableCoursesController
+        deactivate Repository
+        listAvailableCoursesController --> UI
+    deactivate listAvailableCoursesController
+    UI -> UI: display the list
+    UI --> Actor
+deactivate  UI
+@enduml

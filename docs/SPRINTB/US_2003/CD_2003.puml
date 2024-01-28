@@ -1,0 +1,40 @@
+@startuml
+
+class listExamsInCourseUI <<UI>> {
+}
+
+class listExamsInCourseController <<Controller>> {
+    + List<Course>: listCoursesAvailableForTeacher()
+    + List<Exam> : listAllExamsOfCourse(Course course)
+}
+
+class TeachingRepository <<Repository>> {
+    + List<Course>: findCoursesWhereTeacherTeaches(Teacher teacher)
+
+}
+
+class ExamRepository <<Repository>> {
+    + List<Exam> : findExamOfCourse(Course course)
+}
+
+class Teaching <<Aggregate Root>>{
+    -Teacher: teacher
+    -Course: course
+    -bool: isPrimary
+}
+
+class Exam <<Aggregate Root>> {
+-String: examID
+-String: description
+-DateInterval: timePeriod
+}
+
+listExamsInCourseUI ..> listExamsInCourseController
+listExamsInCourseController ..> TeachingRepository
+listExamsInCourseController ..> ExamRepository
+
+ExamRepository-->Exam : saves >
+TeachingRepository-->Teaching : saves >
+
+
+@enduml

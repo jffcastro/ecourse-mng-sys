@@ -1,0 +1,32 @@
+@startuml
+
+class CreateSharedBoardUI <<UI>> {
+}
+
+class CreateSharedBoardController <<Controller>> {
+    + void: createSharedBoard(title, maxNumberOfRows, maxNumberOfColumns, status)
+    + boolean: validateTitle(title)
+    + boolean: validateMaxNumberOfRows(maxNumberOfRows)
+    + boolean: validateMaxNumberOfColumns(maxNumberOfColumns)
+}
+
+class SharedBoardRepository <<Repository>> {
+    + void: save(newSharedBoard)
+}
+class SharedBoardBuilder <<builder>> {
+    + void: withTitle(title)
+    + void: ownedBy(owner)
+    + void: hasMaxNumberOfRows(maxNumberOfRows)
+    + void: hasMaxNumberOfColumns(maxNumberOfColumns)
+    + void: withStatus(status)
+    + void: withInvitationList(List<SharedBoardInvitation> sharedBoardInvitationList)
+    + void: withUpdateList(List<SharedBoardUpdate> sharedBoardUpdateList)
+    + void: build()
+}
+
+CreateSharedBoardUI ..> CreateSharedBoardController
+CreateSharedBoardController ..> SharedBoardRepository
+CreateSharedBoardController ..> SharedBoardBuilder
+
+
+@enduml

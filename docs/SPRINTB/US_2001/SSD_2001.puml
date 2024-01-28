@@ -1,0 +1,34 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+actor Teacher as Actor
+
+autonumber
+
+Actor -> System : asks to create/update an exam
+Actor <-- System :  asks to select one option (create/update)
+alt if option is create exam
+    Actor <-- System : asks for file path
+    Actor -> System : inserts file path
+    alt if file is not null
+        alt if exam is not null
+            Actor <-- System : shows the exam created
+        else if exam is null
+            Actor <-- System : informs about exam not being valid
+        end
+    else if file is null
+        Actor <-- System : informs about file not being valid
+    end
+else if option is update exam
+    Actor <-- System :  shows avaliable exams list\nasks to choose exam to update
+    Actor -> System : chooses exam to update
+    Actor <-- System : asks for file path
+    Actor -> System : inserts file path
+    alt if new exam is not null
+        Actor <-- System : shows the new exam created
+    else if new exam is null
+        Actor <-- System : informs about new exam not being valid
+    end
+end
+
+@enduml

@@ -1,0 +1,26 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+User -> System: Authentication Request
+System --> User: Authentication Response
+
+User -> System: Wants to share one of his boards
+User <-- System: Ask to choose one
+User -> System: Selects one
+
+alt while keepAddingUsers == true
+    System --> User: Asks if wants to add more \nusers or if wants to exit
+    alt if option == Share with other users
+        System --> User: Asks to choose one
+        User -> System: Selects one
+        System --> User: Asks user permission
+        User -> System: Selects one
+        System --> User: Indicates that the \invitation eas created
+
+    else if option == Exit
+        System--> User: Returns to menu
+    end
+end
+@enduml

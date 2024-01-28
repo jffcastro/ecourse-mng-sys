@@ -1,0 +1,22 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+autonumber
+
+actor Manager as Actor
+
+Actor -> System : asks to change course status
+Actor <-- System : asks if user wants to open or close course
+Actor -> System: selects an option
+
+alt if option is OPEN
+    Actor <-- System: output courses available to open list\nasks to select a course
+    Actor -> System: selects course
+    Actor <-- System: asks for closing date
+    Actor -> System: inserts closing date
+else if option is CLOSE
+    Actor <-- System: output courses available to close list\nasks to select a course
+    Actor -> System: selects course
+end
+
+Actor <-- System: back to menu
+@enduml

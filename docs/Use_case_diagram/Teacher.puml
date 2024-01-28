@@ -1,0 +1,21 @@
+@startuml
+'https://plantuml.com/use-case-diagram
+
+left to right direction 
+
+:Teacher: as Teacher
+(FRC09 - Schedule of Class) as (SC)
+(FRC10 - Schedule of Extra Class) as (SEC)
+(FRC11 - Update Schedule of Class) as (USC)
+(FRE01 - Create Exam) as (CE)
+(FRE03 - List Course Exams) as (LCE)
+(FRE06 - List Course Grades) as (LCG)
+
+Teacher --> (SC)
+Teacher --> (SEC)
+Teacher --> (USC)
+Teacher --> (CE)
+Teacher --> (LCE)
+Teacher --> (LCG)
+
+@enduml

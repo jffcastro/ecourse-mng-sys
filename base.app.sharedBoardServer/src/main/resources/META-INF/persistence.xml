@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.1" xmlns="http://xmlns.jcp.org/xml/ns/persistence">
+  <persistence-unit name="eapli.base">
+    <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+    <class>eapli.framework.infrastructure.authz.domain.model.SystemUser</class>
+    <class>eapli.framework.infrastructure.authz.domain.model.Role</class>
+    <class>eapli.framework.infrastructure.authz.domain.model.RoleSet</class>
+    <class>eapli.framework.infrastructure.authz.domain.model.RoleAssignment</class>
+    <class>application.base.usermanagement.domain.Teacher</class>
+    <class>application.base.usermanagement.domain.Student</class>
+    <class>application.base.usermanagement.domain.SignupRequest</class>
+    <class>application.base.domain.courseManagement.Course</class>
+    <class>application.base.domain.courseManagement.CourseName</class>
+    <class>application.base.domain.classManagement.CourseClass</class>
+    <class>application.base.domain.enrollmentManagement.Enrollment</class>
+    <class>application.base.domain.enrollmentManagement.ExamEnrollment</class>
+    <class>application.base.domain.enrollmentManagement.Grade</class>
+    <class>application.base.domain.sharedBoardManagement.SharedBoard</class>
+    <class>application.base.domain.sharedBoardManagement.SharedBoardInvitation</class>
+    <class>application.base.domain.sharedBoardManagement.SharedBoardUpdate</class>
+    <class>application.base.domain.teachingManagement.Teaching</class>
+    <class>application.base.domain.meetingManagement.Meeting</class>
+    <class>application.base.domain.meetingManagement.MeetingInvitation</class>
+    <class>application.base.domain.examManagement.Exam</class>
+    <class>application.base.domain.examManagement.Section</class>
+    <class>application.base.domain.questionManagement.Question</class>
+    <class>application.base.domain.sharedBoardManagement.Row</class>
+    <class>application.base.domain.sharedBoardManagement.SharedBoardColumn</class>
+    <class>application.base.domain.sharedBoardManagement.Cell</class>
+    <class>application.base.domain.sharedBoardManagement.PostIt</class>
+    <class>application.base.domain.sharedBoardManagement.PostItHistory</class>
+
+
+    <properties>
+      <property name="javax.persistence.jdbc.url" value="jdbc:h2:tcp://vsgate-s2.dei.isep.ipp.pt:10946/ecourse"/>
+
+      <property name="javax.persistence.jdbc.user" value="manager"/>
+      <property name="javax.persistence.jdbc.password" value="Password1"/>
+      <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
+      <!-- <property name="javax.persistence.schema-generation.database.action" value="drop-and-create"/> -->
+      <!-- <property name = "hibernate.show_sql" value = "true" /> -->
+      <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+
+    </properties>
+  </persistence-unit>
+</persistence>

@@ -1,0 +1,38 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+autonumber
+
+actor User as Actor
+participant System as System <<presentation>>
+
+activate Actor
+    Actor -> System: Wants to change a post-it
+activate System
+    System --> Actor: Asks to choose a shared board
+deactivate System
+    Actor -> System: Selects a shared board
+activate System
+    System-->Actor: Asks to select a post-it
+deactivate System
+    Actor->System: Selects a post-it
+activate System
+    System-->Actor: Asks to select a change option
+deactivate System
+    Actor-> System: Selects option
+activate System
+    alt if option is change a cell
+        System-->Actor: Asks to select a cell
+        Actor->System: Selects a cell
+    else if option is change content
+        System-->Actor: Asks to insert content
+        Actor->System: Inserts content
+    end
+    System-->Actor: Informs operation success
+deactivate Actor
+
+@enduml

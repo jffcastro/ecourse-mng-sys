@@ -1,0 +1,36 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+actor Teacher as Actor
+
+autonumber
+
+Actor -> System : asks to take exam
+alt if list of exams available for student is not empty
+    Actor <-- System : asks to select one exam
+    Actor -> System : selects on exam
+    Actor <-- System : asks if student wants to do the\n exam manually or import a file
+    Actor -> System : selects option
+    alt if option is manually
+        alt for each section in section list
+            Actor <-- System : shows section information
+            alt for each question in question list
+                Actor <-- System : shows question and asks for student to answer
+                Actor -> System : answers question
+            end
+        end
+    else if option is by file
+        Actor <-- System : ask for file path
+        Actor -> System : inserts file path
+        alt if file is null
+            Actor <-- System : informs about file not valid
+        end
+    end
+    alt if exam grade type is 'ON_SUBMISSION'
+        Actor <-- System : shows student grade
+    end
+else if list of exams available for student is empty
+    Actor <-- System : informs about no exams available to take
+end
+
+@enduml

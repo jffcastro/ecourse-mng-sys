@@ -1,0 +1,46 @@
+@startuml
+
+class ShareSharedBoardUI <<UI>> {
+}
+
+class ShareSharedBoardController <<Controller>> {
+    + boolean: sendRequestToShare(username)
+    + boolean: listUsers(user, sharedBoard)
+    + boolean: createSharedBoardInvitation(user, sharedBoard, permission
+    + List<String> extractList(response)
+}
+
+class TcpServerMessageHandler {
+     + void: findSharedBoardsUserCreate(version, data, out)
+     + void listUsers(version, data, out)
+     + void createSharedBoardInvitation(version, data, out)
+}
+class SharedBoardInvitationRepository <<Repository>> {
+    + void: save(newSharedBoardInvitation)
+}
+
+class UserRepository <<Repository>> {
+    + void: findById(user)
+}
+
+class SharedBoardRepository{
+    + List<SharedBoard> findSharedBoardOfUser(user)
+}
+
+
+class SharedBoardInvitationBuilder <<builder>> {
+    + void: withSharedBoard(sharedBoard)
+    + void: withUser(user)
+    + void: withUserPermission(userPermission)
+    + void: build()
+}
+
+ShareSharedBoardUI ..> ShareSharedBoardController
+ShareSharedBoardController ..> TcpServerMessageHandler
+TcpServerMessageHandler ..> UserRepository
+TcpServerMessageHandler ..> SharedBoardRepository
+TcpServerMessageHandler ..> SharedBoardInvitationRepository
+TcpServerMessageHandler ..> SharedBoardInvitationBuilder
+
+
+@enduml

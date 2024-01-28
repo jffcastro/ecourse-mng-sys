@@ -1,0 +1,10 @@
+??
+
+match the translation;
+
+cao->dog
+gato->cat;
+
+2
+20
+??

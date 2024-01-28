@@ -1,0 +1,7 @@
+@startuml
+left to right direction
+:Student: --> (FRC07 - Request Enrollment in Course)
+:Student: --> (FRE02 - List Exams)
+:Student: --> (FRE04 - Take Exam)
+:Student: --> (FRE05 - List Grades)
+@enduml

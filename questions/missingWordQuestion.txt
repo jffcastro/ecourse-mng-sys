@@ -1,0 +1,11 @@
+??
+MissingWordQuestion;
+
+Um *** e uma estrutura de controlo que permite a *** repetida de um bloco de codigo enquanto uma condicao especificada for verdadeira;
+objeto - laco - grafo - servico,
+execucao - gestao - repeticao - organizacao;
+
+laco,execucao;
+
+2
+??

@@ -1,0 +1,57 @@
+@startuml
+
+class ListFutureExamsUI <<UI>> {
+}
+
+class ListFutureExamsController <<Controller>> {
+    + List<ExamEnrollment>: findListStudentFutureExams()
+}
+
+class ListFutureExamsService{
+    +findListStudentFutureExams(student)
+}
+
+class ExamEnrollmentRepository <<Repository>> {
+    + List<ExamEnrollment>: findStudentExamEnrollmentsWithEnrolledStatus(student)
+}
+
+
+class ExamEnrollment <<Entity>> {
+    String: examID
+    Enrollment: enrollment
+    Grade: examGrade
+}
+
+enum ExamEnrollmentStatus {
+    ENROLLED
+    PRESENT
+    MISSED
+}
+
+class ExamRepository <<Repository>> {
+    + List<Exam>: findById(examEnrollment.examID())).get())
+}
+
+class Exam <<Aggregate Root>> {
+String: examID
+String: description
+DateInterval: timePeriod
+}
+
+enum ExamStatus {
+CREATED
+FINISHED
+}
+
+
+ListFutureExamsUI ..> ListFutureExamsController
+ListFutureExamsController ..> ListFutureExamsService
+ListFutureExamsService ..> ExamEnrollmentRepository
+ListFutureExamsService ..> ExamRepository
+
+ExamRepository --> Exam : has >
+ExamEnrollmentRepository --> ExamEnrollment: has >
+ExamEnrollment --> ExamEnrollmentStatus : has >
+Exam "1" --> "1" ExamStatus : has >
+
+@enduml

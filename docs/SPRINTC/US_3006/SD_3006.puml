@@ -1,0 +1,118 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+autonumber
+
+actor User as Actor
+participant CreatePostItUI as UI <<presentation>>
+control CreatePostItController as CreatePostItController <<application>>
+participant TopServerMessageHandler as TcpServerMessageHandler
+database UserRepository as UserRepository <<repository>>
+database SharedBoardRepository as SharedBoardRepository  <<repository>>
+database CellRepositoryn as CellRepository <<repository>>
+entity Cell as Cell <<domain>>
+participant PostItBuilder as PostItBuilder <<builder>>
+database PostItRepository as PostItRepository <<repository>>
+
+Actor -> UI: Wants to create a post-it
+ activate UI
+     UI ->  CreatePostItController **: create()
+     UI -> CreatePostItController: listSharedBoards(username)
+     activate CreatePostItController
+         note right of CreatePostItController: request is created with the \nclass RequestMessage using \ncode SHARED_BOARDS_OF_USER(8)\n pass by parameter user
+         CreatePostItController -> TcpServerMessageHandler: send(request)
+
+         activate TcpServerMessageHandler
+         TcpServerMessageHandler -> UserRepository: user = findById(username)
+         activate UserRepository
+             UserRepository --> TcpServerMessageHandler: returns SystemUser
+         deactivate UserRepository
+         TcpServerMessageHandler -> SharedBoardRepository : sharedBoardListInvited = findSharedBoardsAvailableForUser(user)
+         activate SharedBoardRepository
+         SharedBoardRepository-->TcpServerMessageHandler: returns List<SharedBoard>
+         deactivate SharedBoardRepository
+         TcpServerMessageHandler -> SharedBoardRepository: availableSharedBoards = findSharedBoardsOfUser(user)
+         activate SharedBoardRepository
+             SharedBoardRepository --> TcpServerMessageHandler: returns List<SharedBoard>
+         deactivate SharedBoardRepository
+             alt if(!availableSharedBoards.isEmpty)
+              TcpServerMessageHandler-->TcpServerMessageHandler : addAll(sharedBoardListInvitated)
+                 alt for (SharedBoard list : availableSharedBoards)
+
+                 TcpServerMessageHandler -> TcpServerMessageHandler: sharedBoards += list.title()
+                 end
+             end
+         deactivate SharedBoardRepository
+
+
+         note right of CreatePostItController: response is created with the \nclass RequestMessage using \ncode SEND_MESSAGE(6) pass \nby parameter String \navailableSharedBoards
+           deactivate CreatePostItController
+         TcpServerMessageHandler --> CreatePostItController: send(response)
+         deactivate TcpServerMessageHandler
+         CreatePostItController --> UI: returns String sharedBoardList
+
+     UI --> Actor: Asks to choose a shared board
+     Actor -> UI: Selects a shared board
+     UI->CreatePostItController: listCells(sharedBoard)
+     activate CreatePostItController
+
+     note right of CreatePostItController: request is created with the \nclass RequestMessage using \ncode LIST_CELLS(12)\n pass by parameter sharedBoardName
+     CreatePostItController-> TcpServerMessageHandler: send(request)
+     activate TcpServerMessageHandler
+     TcpServerMessageHandler-> SharedBoardRepository : findSharedBoard(data)
+     activate SharedBoardRepository
+     SharedBoardRepository-->TcpServerMessageHandler: returns sharedBoard
+     deactivate SharedBoardRepository
+     TcpServerMessageHandler->CellRepository: findAllFreeCellsFromSharedBoard(sharedBoard)
+     activate CellRepository
+     CellRepository-->TcpServerMessageHandler: returns allFreeCells
+     deactivate CellRepository
+     alt if(!listFreeCells.isEmpty)
+                      alt for (Cell list : allFreeCells)
+                      TcpServerMessageHandler -> TcpServerMessageHandler: cellsAvailable += list + " \ n"
+                      end
+                  end
+                  note right of CreatePostItController: response is created with the \nclass RequestMessage using \ncode SEND_MESSAGE(6) pass \nby parameter String \ncellsAvailable
+     TcpServerMessageHandler--> CreatePostItController: send(response)
+     deactivate TcpServerMessageHandler
+CreatePostItController-->UI: returns list of cells available
+     deactivate CreatePostItController
+UI-->Actor: Asks to select a cell
+Actor->UI: Selects cell
+UI-->Actor: Asks to insert content
+Actor-> UI: Iinserts content
+UI->CreatePostItController: createPostIt(userName, content, cell)
+activate CreatePostItController
+         note right of CreatePostItController: request is created with the \nclass RequestMessage using \ncode CREATE_POSTIT(11)\n pass by parameter user, content and cell
+CreatePostItController->TcpServerMessageHandler: send(request)
+activate TcpServerMessageHandler
+TcpServerMessageHandler->CellRepository: findCell(rowTitle, columnTitle)
+activate CellRepository
+CellRepository-->TcpServerMessageHandler: returns cell
+deactivate CellRepository
+TcpServerMessageHandler->Cell: changeTheFreeStatus(true)
+TcpServerMessageHandler->CellRepository: cell= save(cell)
+ TcpServerMessageHandler -> UserRepository: user = findById(username)
+ activate UserRepository
+     UserRepository --> TcpServerMessageHandler: returns SystemUser
+ deactivate UserRepository
+TcpServerMessageHandler->PostItBuilder: create
+TcpServerMessageHandler->PostItBuilder: withOwner(user)
+TcpServerMessageHandler->PostItBuilder: withContent(content)
+TcpServerMessageHandler->PostItBuilder: withCell(cell)
+TcpServerMessageHandler->PostItBuilder: build
+activate PostItBuilder
+PostItBuilder-->TcpServerMessageHandler: return postit
+deactivate PostItBuilder
+TcpServerMessageHandler->PostItRepository: postit = save(postIt)
+  note right of CreatePostItController: response is created with the \nclass RequestMessage using \ncode ACK(2) if success and \nERR(3) if error
+TcpServerMessageHandler-->CreatePostItController: send(responde)
+CreatePostItController-->UI: send(responde)
+UI-->Actor: informs post it was created
+deactivate UI
+
+@enduml

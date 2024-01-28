@@ -1,0 +1,34 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+actor Manager as Actor
+participant AddTeacherUI as UI <<presentation>>
+control AddTeacherController as Controller <<application>>
+participant UserManagementService as UserManagementService <<service>>
+participant TeacherBuilder as TeacherBuilder <<factory>>
+database TeacherRepository as TeacherRepository <<repository>>
+
+Actor -> UI : wants to create new teacher
+activate UI
+    UI --> Actor : ask for data (username, password, first name,\nlast name, email and acronym)
+    Actor -> UI : inserts data
+    UI -> Controller : addTeacher(username, password, firstName,\n lastName, email, acronym, roles)
+    activate Controller
+        Controller -> UserManagementService : registerNewUser(username, password, firstName,\n lastName, email, acronym)
+        activate UserManagementService
+            note right of UserManagementService : functionality implemented by the eapli framework
+            UserManagementService --> Controller : system user generated
+        deactivate UserManagementService
+        Controller -> TeacherBuilder : create()
+        Controller -> TeacherBuilder : withSystemUser(systemUser)
+        Controller -> TeacherBuilder : withAcronym(acronym)
+        Controller -> TeacherBuilder : build()
+        activate TeacherBuilder
+            TeacherBuilder --> Controller : teacher created
+        deactivate TeacherBuilder
+        Controller -> TeacherRepository : save(teacher)
+        Controller --> UI : teacher created
+    deactivate Controller
+deactivate UI
+
+@enduml

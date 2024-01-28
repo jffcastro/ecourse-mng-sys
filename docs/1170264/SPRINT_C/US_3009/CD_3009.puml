@@ -1,0 +1,45 @@
+@startuml
+
+class ViewBoardHistoryOfUpdatesUI <<UI>> {
+}
+
+class ViewBoardHistoryOfUpdatesController <<controller>> {
+    + List<String> : listSharedBoards(username)
+    + List<String> : findHistoryOfSharedBoardUpdates(sharedBoard)
+}
+
+class TcpServerMessageHandler {
+    + void: findSharedBoardsOfUser(version, data, out)
+    + void: findPostItHistory(version, data, out);
+}
+
+class UserRepository <<repository>> {
+    + SystemUser : findById(id)
+}
+
+class SharedBoardRepository <<repository>> {
+    + SharedBoard : findSharedBoard(title)
+}
+
+class PostItHistoryRepository <<repository>> {
+    + PostItHistory : findUpdatesOfSharedBoard(title)
+}
+
+class PostItHistory <<domain>> {
+    - PostIt : postIt
+    - Date : timeStamp
+    - String : oldDescrpition
+    - String : newDescrpition
+    - Cell: oldCell
+    - Cell : new Cell
+}
+
+ViewBoardHistoryOfUpdatesUI ..> ViewBoardHistoryOfUpdatesController
+ViewBoardHistoryOfUpdatesController ..> TcpServerMessageHandler
+TcpServerMessageHandler --> UserRepository
+TcpServerMessageHandler --> SharedBoardRepository
+TcpServerMessageHandler --> PostItHistoryRepository
+PostItHistoryRepository --> PostItHistory : has >
+TcpServerMessageHandler --> PostItHistory : finds >
+
+@enduml

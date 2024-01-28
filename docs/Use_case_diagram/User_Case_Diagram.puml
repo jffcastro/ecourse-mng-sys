@@ -1,0 +1,17 @@
+@startuml
+left to right direction
+:User: --> (FRU01 - Management of Users)
+:User: --> (FRC05 - List Courses)
+:User: --> (FRB01 - Create Board)
+:User: --> (FRB02 - Share Board)
+:User: --> (FRB03 - View Board)
+:User: --> (FRB04 - Create Post-it)
+:User: --> (FRB05 - Change Post-it)
+:User: --> (FRB06 - Undo Post-it Change)
+:User: --> (FRB07 - View Board History)
+:User: --> (FRB08 - Archive Board)
+:User: --> (FRM01 - Schedule a Meeting)
+:User: --> (FRM02 - Cancel Meeting)
+:User: --> (FRM03 - Accept/Reject Meeting)
+:User: --> (FRM04 - List Participants)
+@enduml

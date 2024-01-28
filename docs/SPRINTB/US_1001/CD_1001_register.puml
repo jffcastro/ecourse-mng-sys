@@ -1,0 +1,55 @@
+@startuml
+
+class RegisterUserUI{
+    +doShow()
+    +headLine()
+}
+
+
+class AddManagerUI{
+    +doShow()
+    +headLine()
+}
+
+class AddStudentUI{
+    +doShow()
+    +headLine()
+}
+
+class AddTeacherUI{
+    +doShow()
+    +headLine()
+}
+
+class AddTeacherController{
+    +Teacher :addTeacher(username, password, firstName,lastName, email, acronym)
+}
+
+class UserManagementService{
+    +SystemUser : registerNewUser(username, password, firstName,lastName, email)
+}
+
+class TeacherBuilder{
+    +TeacherBuilder : withSystemUser(systemUser)
+    +TeacherBuilder : withAcronym(acronym)
+    +Teacher : build()
+}
+
+class Teacher{
+    -SystemUser : systemUser
+    -Acronym : acronym
+}
+
+class TeacherRepository{
+   +save()
+}
+
+RegisterUserUI ...> AddManagerUI
+RegisterUserUI ...> AddTeacherUI
+RegisterUserUI ...> AddStudentUI
+AddTeacherUI ...> AddTeacherController
+AddTeacherController --> UserManagementService
+AddTeacherController -->TeacherBuilder
+TeacherBuilder --> Teacher : creates >
+AddTeacherController --> TeacherRepository : saves()
+@enduml

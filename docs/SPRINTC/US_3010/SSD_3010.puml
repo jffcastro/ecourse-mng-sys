@@ -1,0 +1,21 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor User as User
+activate User
+User -> System: Wants to archive a board
+activate System
+System --> User : Shows all sharedboards owned by the user
+deactivate System
+User -> System: Chooses a sharedboard
+activate System
+System --> User: shows operation success
+deactivate System
+
+
+@enduml

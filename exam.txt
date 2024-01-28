@@ -1,0 +1,80 @@
+"
+exam1;
+update teste;
+29/10/2023;
+01/11/2023;
+teste;
+teste;
+NONE;
+ON_SUBMISSION;
+<<
+    section1;
+    ??
+        1;
+        MatchingQuestion;
+
+        Match the translation;
+        cao,gato;
+        cat,dog;
+
+        cao->dog, gato->cat;
+        2
+    ??
+    ??
+        2;
+        MatchingQuestion;
+
+        Match the translation;
+        porco,baleia;
+        pig,whale;
+
+        porco->pig, baleia->whale;
+
+        1
+    ??
+>>
+<<
+    section2;
+    ??
+        1;
+        MultipleChoiceQuestion;
+
+        How tall is the everest?;
+        100metros,
+        2000metros,
+        7000metros;
+
+        7000metros;
+        5
+    ??
+    ??
+        2;
+        MissingWordQuestion;
+        FILL *** GAP FOR *** PHRASE;
+        the - that - these,the - that - this - these;
+        the, this;
+        2
+    ??
+    ??
+        3;
+        NumericQuestion;
+        How tall is the everest?;
+        7000;
+        5
+    ??
+    ??
+        4;
+        ShortQuestion;
+        What is the everest?;
+        Mountain;
+        2
+    ??
+    ??
+        5;
+        TrueFalseQuestion;
+        Is the everest tall?;
+        True;
+        3
+    ??
+>>
+"

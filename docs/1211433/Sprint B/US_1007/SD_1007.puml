@@ -1,0 +1,78 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor Manager as Actor
+participant BulkEnrollStudentsUI as UI <<presentation>>
+control BulkEnrollStudentsController as Controller <<application>>
+participant BulkEnrollStudentsService as Service <<service>>
+database StudentRepository as StudentRepository <<repository>>
+database CourseRepository as CourseRepository <<repository>>
+participant EnrollmentBuilder as EnrollmentBuilder <<builder>>
+entity Enrollment as Enrollment <<Domain>>
+database EnrollmentRepository as EnrollmentRepository <<repository>>
+
+Actor -> UI: asks to bulk enroll students
+activate UI
+    UI -> Controller : create()
+    UI --> Actor : asks for csv file path
+    Actor -> UI : inserts file path
+    UI -> Controller : importFile(path)
+    activate Controller
+        Controller -> Service : importFile(path)
+        activate Service
+            Service --> Controller : file imported
+        deactivate Service
+        Controller --> UI
+    deactivate Controller
+    UI -> Controller : validateFile(file) : file imported
+    activate Controller
+        Controller -> Service : validateFile(file
+        activate Service
+            Service --> Controller : file validation boolean
+        deactivate Service
+        Controller --> UI : file validation boolean
+    deactivate Controller
+    alt if fileValid == True
+        UI -> Controller : bulkEnrollStudents(file)
+        activate Controller
+            Controller -> Service: bulkEnrollStudents(file)
+            activate Service
+                Service -> EnrollmentBuilder : create()
+                alt while file.hasNextLine()
+                    alt if line is not empty
+                        Service -> StudentRepository : findByMecanographicNumber(mecanographicNumber)
+                        activate StudentRepository
+                            StudentRepository --> Service : student
+                        deactivate StudentRepository
+                        Service -> CourseRepository : findByName(name)
+                        activate CourseRepository
+                            CourseRepository --> Service : course
+                        deactivate CourseRepository
+
+                        alt if student is not null and course is not null\n and course.courseStatus is enrollment\n and enrollmentRepository.findStudentEnrollmentInCourse(student, course) == null
+                            Service -> EnrollmentBuilder : withEnrollmentStatus(EnrollmentStatus.ACCEPTED)
+                            Service -> EnrollmentBuilder : ofStudent(student)
+                            Service -> EnrollmentBuilder : inCourse(course)
+                            Service -> EnrollmentBuilder : build()
+                            activate EnrollmentBuilder
+                                EnrollmentBuilder --> Service : enrollment
+                            deactivate EnrollmentBuilder
+                            Service -> EnrollmentRepository : save(enrollment)
+                        end
+                    end
+                end
+                Service --> Controller : number of enrollments created
+            deactivate Service
+            Controller --> UI : number of enrollments created
+        deactivate Controller
+        UI --> Actor : informs about operation success and number of enrollments created
+    else if fileValid == False
+        UI --> Actor : informs about operation insuccess due to invalid file
+    end
+deactivate UI
+@enduml

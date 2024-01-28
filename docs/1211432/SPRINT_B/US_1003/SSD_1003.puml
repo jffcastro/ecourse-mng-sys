@@ -1,0 +1,40 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+Actor -> System: Authentication Request
+System --> Actor: Authentication Response
+
+Actor -> System: Wants to open or close enrollments
+System --> Actor :Asks if wants to OPEN or CLOSE enrollments
+
+System <- Actor: Selects option
+
+alt if option == OPEN
+    alt if courses list is not empty
+        System --> Actor: Ask user to choose Course \nType Selection
+        Actor -> System: Select Course
+        Actor <-- System : asks for closing date
+        alt while date is not valid
+            Actor -> System : inserts closing date
+            alt if date is not valid
+            System --> Actor: informs about date not valid
+            end
+        end
+    else if course list is empty
+        System --> Actor: informs there are no courses available to open the enrollments
+    end
+else if option == CLOSE
+    alt if courses list is not empty
+        System --> Actor: Ask user to choose Course \nType Selection
+        Actor -> System: Select Course
+    else if courses list is empty
+        System --> Actor: informs there are no courses available to close the enrollments
+    end
+end
+
+System --> Actor: back to menu
+
+
+@enduml

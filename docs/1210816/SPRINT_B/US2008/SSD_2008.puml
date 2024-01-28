@@ -1,0 +1,25 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+actor Student as Actor
+
+autonumber
+
+Actor -> System : asks to create an exam
+Actor <-- System :  selects option
+Actor -> System : asks to choose a course
+Actor <-- System :  selects course
+    Actor <-- System : asks for file path
+    Actor -> System : inserts file path
+    alt if file is not null
+        alt if exam is not null
+            Actor <-- System : shows the exam created
+        else if exam is null
+            Actor <-- System : informs about exam not being valid
+        end
+    else if file is null
+        Actor <-- System : informs about file not being valid
+    end
+
+
+@enduml

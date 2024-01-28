@@ -1,0 +1,35 @@
+@startuml
+
+class listAvailableCoursesUI <<UI>> {
+}
+
+class listAvailableCoursesController <<Controller>> {
+    + Iterable<Course>: listCoursesAvailableForManager()
+    + Iterable<Course>: listCoursesAvailableForTeacher()
+    + Iterable<Course>: listCoursesWhereStudentIsEnroll()
+    + Iterable<Course>: listCoursesWhereStudentCanEnroll(Iterable<Course> coursesWhereStudentIsEnroll)
+    + Iterable<Course>: removeCoursesWhereStudentIsAlreadyEnrolled(List<Course> coursesWhereStudentIsEnroll, List<Course> coursesEnrollStatus)
+
+}
+
+class CourseRepository <<Repository>> {
+    + Iterable<Course>: findAll()
+    + Iterable<Course>: findCourseListForStudentWhereHeCanEnroll(student)
+}
+
+class EnrollmentRepository <<Repository>> {
+    + Iterable<Course> findCoursesStudentIsEnroll(student);
+
+}
+
+class TeachingRepository <<Repository>> {
+    + Iterable<Course> findCoursesWhereTeacherTeaches(teacher);
+
+}
+
+listAvailableCoursesUI ..> listAvailableCoursesController
+listAvailableCoursesController ..> CourseRepository
+listAvailableCoursesController ..> EnrollmentRepository
+listAvailableCoursesController ..> TeachingRepository
+
+@enduml

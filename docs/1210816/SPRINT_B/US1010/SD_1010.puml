@@ -1,0 +1,221 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor Teacher as Actor
+participant ScheduleClassUI as UI <<presentation>>
+control ScheduleClassController as Controller <<application>>
+participant CourseClassBuilder as ClassBuilder <<builder>>
+participant "class:CourseClass" as Class <<domain>>
+
+
+participant CheckIfUserIsFreeService as CheckIfUserIsFreeService <<service>>
+participant AuthorizationService as AuthorizationService <<service>>
+participant AuthzRegistry as AuthzRegistry <<service>>
+database TeacherRepository as TeacherRepository <<repository>>
+database CourseRepository as CourseRepository <<repository>>
+database EnrollmentRepository as EnrollmentRepository <<repository>>
+database MeetingRepository as MeetingRepository <<repository>>
+database MeetingInvitationRepository as MeetingInvitationRepository <<repository>>
+database ClassRepository as ClassRepository <<repository>>
+participant PersistenceContext as PersistenceContext <<persistence>>
+
+activate Actor
+
+Actor -> UI: asks to schedule a class
+activate UI
+
+    UI -> AuthzRegistry : checkAuthorization()
+    activate AuthzRegistry
+    AuthzRegistry -> AuthorizationService : authorizationService()
+    deactivate AuthzRegistry
+    activate AuthorizationService
+    AuthorizationService -> UI : authorization
+    deactivate AuthorizationService
+
+    alt if authorization.isAuthenticatedUserAuthorizedTo(BaseRoles.TEACHER)
+
+        UI -> Controller: getTeacher()
+        activate Controller
+        Controller -> PersistenceContext: getTeacher()
+        activate PersistenceContext
+        PersistenceContext -> TeacherRepository: findBySystemUser()
+
+        activate TeacherRepository
+
+        TeacherRepository -> Controller: teacher
+        deactivate TeacherRepository
+        deactivate PersistenceContext
+        Controller -> UI: teacher
+        deactivate Controller
+
+        UI->Actor: informs about teacher
+        alt if teacher not null
+        UI->Controller: listCourses()
+        activate Controller
+        Controller->PersistenceContext: listCourses()
+        activate PersistenceContext
+        PersistenceContext->CourseRepository: findCourseWithEnrollStatus()
+        activate CourseRepository
+        CourseRepository->Controller: courses
+        deactivate CourseRepository
+        deactivate PersistenceContext
+        Controller->UI: courses
+
+        deactivate Controller
+        UI -> Actor: informs about courses
+        alt if course not null
+        Actor -> UI: selects a course
+        UI -> Controller: listStudentsByCourse(course)
+        activate Controller
+        Controller -> PersistenceContext: listStudentsByCourse(course)
+        activate PersistenceContext
+        PersistenceContext -> EnrollmentRepository: findUsersOfCourse(course)
+        activate EnrollmentRepository
+        EnrollmentRepository -> Controller: students
+        deactivate EnrollmentRepository
+        deactivate PersistenceContext
+        Controller -> UI: students
+        deactivate Controller
+
+        UI -> Actor: informs about students
+        alt if students not null
+        UI -> Actor: Asks for Class title
+        Actor -> UI: provides Class title
+        UI -> Controller: isTitleValid(title)
+        activate Controller
+        Controller -> UI: titleIsValid
+        deactivate Controller
+
+       UI-> Actor: informs about title validity
+       UI -> Controller: getScheduleOfTeacher()
+       activate Controller
+       Controller -> UI: schedule
+         deactivate Controller
+         UI -> Actor: informs about schedule
+         UI -> Actor: Asks for Class weekDay
+            Actor -> UI: provides Class weekDay
+            UI -> Controller: getUserWeekdayInput()
+            activate Controller
+            Controller -> UI: weekday
+            deactivate Controller
+            UI -> Actor: informs about weekday
+            UI -> Actor: Asks for Class Start Date
+
+            Actor -> UI: provides Class Start Date
+            UI -> Actor: Asks for Class End Date
+
+             Actor -> UI: provides Class End Date
+
+            UI -> Controller: checkAndGetEndDate(startDate, endDate)
+            activate Controller
+            Controller -> UI: datesValidity
+            deactivate Controller
+            UI -> Actor: informs about dates validity
+
+            UI -> Actor: Asks for Class Start Time
+
+             Actor -> UI: provides Class Start Tinme
+             UI -> Actor: Asks for Class End Time
+
+              Actor -> UI: provides Class End Time
+
+             UI -> Controller: isTimeRangeValid(startTime, endTime)
+             activate Controller
+             Controller -> UI: timeRangeValidity
+             deactivate Controller
+             UI -> Actor: informs about times validity
+
+             UI -> Controller: getReoccurringDates(startDate, endDate, weekday)
+                activate Controller
+                Controller -> UI: reoccurringDates
+                deactivate Controller
+                UI -> Actor: informs about reoccurring dates
+
+                alt if reoccurringDates not null
+
+                UI -> UI: add students and teacher to List<SystemUsers>
+
+            loop Date date : recurringDates
+                 UI->Controller: isCheckCourseClass(SystemUsers, title,date,startTime,endTime)
+                    activate Controller
+                    Controller -> CheckIfUserIsFreeService: checkIfUserIsNotFree(user, date, startTime, endTime)
+                    activate CheckIfUserIsFreeService
+                    CheckIfUserIsFreeService -> PersistenceContext: findClassesOfUser(user)
+                    activate PersistenceContext
+                    activate ClassRepository
+                    PersistenceContext -> ClassRepository: findClassesOfUser(user)
+                    ClassRepository -> CheckIfUserIsFreeService: classes
+                    deactivate PersistenceContext
+                    deactivate ClassRepository
+                    CheckIfUserIsFreeService -> PersistenceContext: findMeetingsOfUser(user)
+                    activate PersistenceContext
+                    activate MeetingRepository
+                    PersistenceContext -> MeetingRepository: findMeetingsOfUser(user)
+                    MeetingRepository -> CheckIfUserIsFreeService: meetings
+                    deactivate PersistenceContext
+                    deactivate MeetingRepository
+                    CheckIfUserIsFreeService -> PersistenceContext: findMeetingInvitationsOfUser(user)
+                    activate PersistenceContext
+                    activate MeetingInvitationRepository
+                    PersistenceContext -> MeetingInvitationRepository: findMeetingInvitationsOfUser(user)
+                    MeetingInvitationRepository -> CheckIfUserIsFreeService: meetingInvitations
+                    deactivate PersistenceContext
+                    deactivate MeetingInvitationRepository
+
+
+                    CheckIfUserIsFreeService -> CheckIfUserIsFreeService: checkIfDatesCoincide(Date date, LocalTime startTime, LocalTime endTime,\nList<CourseClass> classLst, List<Meeting> meetLst,\n List<MeetingInvitation> meetInvLst)
+                    CheckIfUserIsFreeService -> Controller: isFree
+                    deactivate CheckIfUserIsFreeService
+                    deactivate PersistenceContext
+                    Controller -> UI: isFree
+                    deactivate Controller
+
+                    alt if Free
+                        UI -> Controller: createClass(teacher, title, date, startTime, endTime, teacher, students)
+                        activate Controller
+                        Controller -> ClassBuilder: build(teacher, title, date, startTime, endTime, teacher, students)
+                        activate ClassBuilder
+                        ClassBuilder -> Class: Class(teacher, title, date, startTime, endTime, teacher, students)
+                        activate Class
+                        Class -> ClassBuilder: Class
+
+                        deactivate Class
+                        ClassBuilder -> Controller: Class
+                        deactivate ClassBuilder
+
+                        Controller -> PersistenceContext: save(Class)
+                        activate PersistenceContext
+                        PersistenceContext -> ClassRepository: save(Class)
+                        deactivate PersistenceContext
+                        activate ClassRepository
+                        UI -> Actor: informs about success
+                        deactivate ClassRepository
+                        deactivate Controller
+
+
+                    else
+                        UI -> Actor: informs that the user isn't free
+                        note right
+                           EITHER IGNORED OR CLASS IS NOT CREATED DEPENDING IF THE USER IS A TEACHER OR A STUDENT
+                        end note
+                    end
+
+
+
+    end
+    end
+    end
+    end
+    end
+    else
+            UI -> Actor: informs that the user is not authorized
+
+    end
+
+deactivate UI
+@enduml

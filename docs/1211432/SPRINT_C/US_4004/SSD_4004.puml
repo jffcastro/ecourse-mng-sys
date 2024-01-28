@@ -1,0 +1,35 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+Actor -> System: Authentication Request
+System --> Actor: Authentication Response
+
+Actor -> System: Wants to view the list of the participants in a \n meeting and the status (accepted or rejected)
+System --> Actor: Asks if he wants to see the participants of one \n meeting that he created or one that he accept the invite
+Actor -> System: Selects option
+alt if is meeting he created
+    alt if meeting list is not null
+        System --> Actor :Asks to choose the meeting
+        Actor -> System : Selects meeting
+        alt if list of meeting invites is not null
+            System --> Actor: display list of meeting invites
+        else if list of meeting invites is null
+            System --> Actor: informs that there are no invites for that meeting
+        end
+    else if meeting list is null
+        System --> Actor: informs that he has no meetings
+    end
+else if option is meeting he accepted the invite
+    alt if meeting invitation list is not null
+        System --> Actor :Asks to choose the meeting
+        Actor -> System : Selects meeting
+        System --> Actor: display list of meeting invites
+
+    else if meeting list is null
+        System --> Actor: informs that he has no meetings
+    end
+end
+
+@enduml

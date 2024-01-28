@@ -1,0 +1,39 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+class ListUsersUI{
+    +doShow()
+    +headLine()
+}
+
+
+class ListUsersController{
+    +getRoles()
+    +getAllUsers()
+    +getAllUsersOfRole()
+}
+
+class BaseRoles{
+    +getAvailableRoles()
+}
+
+class UserManagementService{
+    +allUsers()
+
+}
+
+
+class UserRepository{
+    +findAll()
+}
+
+
+ListUsersUI ..> ListUsersController
+
+ListUsersController ..> BaseRoles
+ListUsersController ..> UserManagementService
+
+UserManagementService --> UserRepository: uses
+
+
+@enduml

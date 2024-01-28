@@ -1,0 +1,52 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+autonumber
+
+actor Student as Actor
+participant listAvailableCoursesUI as UI <<presentation>>
+
+
+Actor -> UI: Wants to see the courses available to him
+activate UI
+    create control listAvailableCoursesController
+    UI -> listAvailableCoursesController: create()
+    UI -> listAvailableCoursesController: listCoursesWhereStudentIsEnroll
+
+    database EnrollmentRepository as Repository <<repository>>
+    database CourseRepository as Repo <<repository>>
+
+
+    activate listAvailableCoursesController
+        listAvailableCoursesController -> Repository: findCoursesStudentIsEnroll(student)
+        activate Repository
+            Repository --> listAvailableCoursesController:
+        deactivate Repository
+        listAvailableCoursesController --> UI
+    deactivate listAvailableCoursesController
+
+
+    UI -> listAvailableCoursesController: listCoursesWhereStudentCanEnroll(coursesWhereStudentIsEnroll)
+    activate listAvailableCoursesController
+        listAvailableCoursesController -> Repo: findCourseListForStudentWhereHeCanEnroll(student)
+        activate Repo
+            Repo --> listAvailableCoursesController:
+        deactivate Repo
+    note right listAvailableCoursesController: for each cicle remove courses where student is already enrolled
+
+        alt for (Course enrolledCourse : coursesWhereStudentIsEnroll)
+            listAvailableCoursesController -> listAvailableCoursesController: coursesToEnroll.removeIf(course -> course.sameAs(enrolledCourse));
+        end
+    deactivate listAvailableCoursesController
+    listAvailableCoursesController --> UI
+
+
+    UI -> UI: display the list of the courses
+
+    UI --> Actor
+deactivate UI
+@enduml

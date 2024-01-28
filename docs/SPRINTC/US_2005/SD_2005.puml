@@ -1,0 +1,26 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor Student as Actor
+participant ListOfMyGradesUI as UI <<presentation>>
+control ListOfMyGradesController as ListOfMyGradesController <<application>>
+database ExamEnrollmentRepository as ExamEnrollmentRepository <<repository>>
+
+Actor -> UI: Wants view the list of his grades
+activate UI
+    UI -> ListOfMyGradesController ** : create()
+    UI -> ListOfMyGradesController: listMyGrades(student)
+    activate ListOfMyGradesController
+        ListOfMyGradesController -> ExamEnrollmentRepository: findExamGradesOfStudent(student)
+        activate ExamEnrollmentRepository
+            ExamEnrollmentRepository --> ListOfMyGradesController
+        deactivate ExamEnrollmentRepository
+        ListOfMyGradesController --> UI
+    deactivate ListOfMyGradesController
+    UI --> Actor: display the list
+deactivate UI
+@enduml

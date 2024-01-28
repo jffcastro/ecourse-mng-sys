@@ -1,0 +1,50 @@
+@startuml
+actor Teacher as Actor
+boundary UI
+
+activate Actor
+
+Actor -> UI: Change the Schedule of a class
+activate UI
+UI -> Actor: Authorization status
+deactivate UI
+alt if authorized
+
+    UI -> Actor: Asks for Class title to match
+    activate UI
+    Actor -> UI: Class title
+    deactivate UI
+    UI -> Actor: Asks for Class Title
+    activate UI
+    Actor -> UI: Asks for Class Date to match
+    deactivate UI
+    UI -> Actor: Informs if Class Found
+    activate UI
+    deactivate UI
+    alt if Class Found
+    UI -> Actor: Asks for new Class date
+    activate UI
+    Actor -> UI: Class Date
+    deactivate UI
+    UI -> Actor: Asks for new Class Start Time
+    activate UI
+    Actor -> UI: Class Start Time
+    deactivate UI
+    UI -> Actor: Asks for new Class End Time
+    activate UI
+    Actor -> UI: Class End Time
+    deactivate UI
+
+    alt if user is available
+        UI -> Actor: Change schedule of class
+        activate UI
+    else
+        UI -> Actor: Inform user is not available
+    end
+    end
+else
+    UI -> Actor: Inform user is not authorized
+    deactivate UI
+end
+
+@enduml

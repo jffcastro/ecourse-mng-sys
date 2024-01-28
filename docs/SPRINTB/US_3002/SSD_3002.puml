@@ -1,0 +1,17 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+User -> System: Authentication Request
+System --> User: Authentication Response
+
+User -> System: Asks for permission to create a board
+User <-- System: Operation (in)success
+
+User -> System: Ask to create a shared board
+User <-- System: Ask shared board information
+
+User -> System: title, maxNumberOfRows, \nmaxNumberOfColumns
+System --> User: display shared board info
+@enduml

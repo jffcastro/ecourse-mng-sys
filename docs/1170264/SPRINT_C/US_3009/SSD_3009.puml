@@ -1,0 +1,16 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+autonumber
+
+actor User as Actor
+
+Actor -> System: asks to view history of updates on a board
+alt if list of shared boards available is not empty
+    Actor <-- System: shows available boards list\nasks to choose board
+    Actor -> System: selects board
+    Actor <-- System : displays board history of updates of board selected
+else if list of shared boards available is empty
+    Actor <-- System : informs about no boards available
+end
+
+@enduml

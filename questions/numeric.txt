@@ -1,0 +1,9 @@
+??
+
+NumericQuestion;
+
+how tall is everest?;
+7000;
+
+5
+??

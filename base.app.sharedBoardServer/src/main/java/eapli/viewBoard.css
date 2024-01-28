@@ -1,0 +1,45 @@
+body {
+    background-image: url('https://i.pinimg.com/736x/84/9f/d6/849fd638e6e024e3b3fb0f2b144eed01.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+h1 {
+    text-align: center;
+    font-size: 30px;
+}
+
+th {
+    font-weight: bold;
+    font-size: 30px;
+    text-align: center;
+    padding: 3px;
+    border: 1px solid black;
+}
+
+td {
+    border: 1px solid black;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 30px;
+    padding: 5px;
+}
+
+html,
+body {
+    height: 92%;
+    margin: 5px;
+    padding: 5px;
+}
+
+table {
+    padding: 15px;
+    align: center;
+    width: 98%;
+    height: 90%;
+    border-collapse: collapse;
+}
+
+img {
+    padding: 10px;
+}

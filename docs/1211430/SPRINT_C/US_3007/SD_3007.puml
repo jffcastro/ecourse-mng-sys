@@ -1,0 +1,193 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+autonumber
+
+actor User as Actor
+participant ChangePostItUI as UI <<presentation>>
+control ChangePostItController as CTRL <<application>>
+participant TcpServerMessageHandler as TcpServerMessageHandler
+participant UserRepository as UserRepository
+participant SharedBoardRepository as SharedBoardRepository
+participant PostItRepository as PostItRepository
+participant CellRepository as CellRepository
+participant Cell as Cell
+participant PostItHistoryBuilder as PostItHistoryBuilder
+participant PostItHistoryRepository as PostItHistoryRepository
+participant PostIt as PostIt
+
+activate Actor
+    Actor->UI: wants to change a post-it
+    activate UI
+    UI->CTRL: listSharedBoards(SharedBoardClient.userName)
+    activate CTRL
+note right of CTRL: request is created with the \nclass RequestMessage using \ncode SHARED_BOARDS_OF_USER(8)\n pass by parameter user
+         CTRL -> TcpServerMessageHandler: send(request)
+
+         activate TcpServerMessageHandler
+         TcpServerMessageHandler -> UserRepository: user = findById(username)
+         activate UserRepository
+             UserRepository --> TcpServerMessageHandler: returns SystemUser
+         deactivate UserRepository
+         TcpServerMessageHandler -> SharedBoardRepository : sharedBoardListInvited = findSharedBoardsAvailableForUser(user)
+         activate SharedBoardRepository
+         SharedBoardRepository-->TcpServerMessageHandler: returns List<SharedBoard>
+         deactivate SharedBoardRepository
+         TcpServerMessageHandler -> SharedBoardRepository: availableSharedBoards = findSharedBoardsOfUser(user)
+         activate SharedBoardRepository
+             SharedBoardRepository --> TcpServerMessageHandler: returns List<SharedBoard>
+         deactivate SharedBoardRepository
+             alt if(!availableSharedBoards.isEmpty)
+              TcpServerMessageHandler-->TcpServerMessageHandler : addAll(sharedBoardListInvitated)
+                 alt for (SharedBoard list : availableSharedBoards)
+
+                 TcpServerMessageHandler -> TcpServerMessageHandler: sharedBoards += list.title()
+                 end
+             end
+         deactivate SharedBoardRepository
+
+
+         note right of CTRL: response is created with the \nclass RequestMessage using \ncode SEND_MESSAGE(6) pass \nby parameter String \navailableSharedBoards
+           deactivate CTRL
+         TcpServerMessageHandler --> CTRL: send(response)
+         deactivate TcpServerMessageHandler
+         CTRL --> UI: returns String sharedBoardList
+
+     UI --> Actor: Asks to choose a shared board
+     Actor -> UI: Selects a shared board
+     UI->CTRL: listPostIts(userName, sharedBoard)
+     activate CTRL
+
+     note right of CTRL: request is created with the \nclass RequestMessage using \ncode LIST_POSTITS(14)\n pass by parameter userName and sharedBoardName
+     CTRL-> TcpServerMessageHandler: send(request)
+     activate TcpServerMessageHandler
+      TcpServerMessageHandler -> UserRepository: user = findById(username)
+      activate UserRepository
+          UserRepository --> TcpServerMessageHandler: returns SystemUser
+      deactivate UserRepository
+     TcpServerMessageHandler-> SharedBoardRepository : findSharedBoard(sharedBoardTitle)
+     activate SharedBoardRepository
+     SharedBoardRepository-->TcpServerMessageHandler: returns sharedBoard
+     deactivate SharedBoardRepository
+     TcpServerMessageHandler->PostItRepository: findPostItsFromSharedBoard(sharedBoard, user)
+     activate PostItRepository
+     PostItRepository-->TcpServerMessageHandler: returns postItsList
+     deactivate PostItRepository
+     alt if(!postItsList.isEmpty)
+                      alt for (PostIt list : postItsList)
+                      TcpServerMessageHandler -> TcpServerMessageHandler: postIt += list + " \ n"
+                      end
+                  end
+                  note right of CTRL: response is created with the \nclass RequestMessage using \ncode SEND_MESSAGE(6) pass \nby parameter String \ncellsAvailable
+     TcpServerMessageHandler--> CTRL: send(response)
+     deactivate TcpServerMessageHandler
+CTRL-->UI: returns String postItsList
+     deactivate CTRL
+UI-->Actor: Asks to select a postIt
+Actor->UI: Selects postIt
+UI-->Actor: Asks to select a change option
+Actor->UI: selects option
+alt if option is change cell
+ UI->CTRL: listCells(sharedBoard)
+     activate CTRL
+
+     note right of CTRL: request is created with the \nclass RequestMessage using \ncode LIST_CELLS(12)\n pass by parameter sharedBoardName
+     CTRL-> TcpServerMessageHandler: send(request)
+
+     activate TcpServerMessageHandler
+     TcpServerMessageHandler-> SharedBoardRepository : findSharedBoard(sharedBoardTitle)
+     activate SharedBoardRepository
+     SharedBoardRepository-->TcpServerMessageHandler: returns sharedBoard
+     deactivate SharedBoardRepository
+     TcpServerMessageHandler->CellRepository: findAllFreeCellsFromSharedBoard(sharedBoard)
+     activate CellRepository
+     CellRepository-->TcpServerMessageHandler: returns allFreeCells
+     deactivate CellRepository
+     alt if(!listFreeCells.isEmpty)
+                      alt for (Cell list : allFreeCells)
+                      TcpServerMessageHandler -> TcpServerMessageHandler: cellsAvailable += list + " \ n"
+                      end
+                  end
+                  note right of CTRL: response is created with the \nclass RequestMessage using \ncode SEND_MESSAGE(6) pass \nby parameter String \ncellsAvailable
+     TcpServerMessageHandler--> CTRL: send(response)
+     deactivate TcpServerMessageHandler
+CTRL-->UI: returns String cellsAvailable
+     deactivate CTRL
+UI-->Actor: Asks to select a cell
+Actor->UI: Selects cell
+UI->CTRL: movePostItToOtherCell(postIt, cell)
+note right of CTRL: request is created with the \nclass RequestMessage using \ncode CHANGE_POSTIT_CELL(15)\n pass by parameter postIt and cell
+CTRL->TcpServerMessageHandler : send(request)
+activate TcpServerMessageHandler
+TcpServerMessageHandler->CellRepository: findCell(oldRow, oldContent)
+activate CellRepository
+CellRepository-->TcpServerMessageHandler:returns oldCell
+deactivate CellRepository
+TcpServerMessageHandler->CellRepository: findCell(newRow, newContent)
+activate CellRepository
+CellRepository-->TcpServerMessageHandler:returns newCell
+deactivate CellRepository
+TcpServerMessageHandler->PostItRepository: findPostIt(oldCell)
+activate PostItRepository
+PostItRepository-->TcpServerMessageHandler:returns postit
+deactivate PostItRepository
+alt if postit is not null
+TcpServerMessageHandler->Cell: newCell.changeTheFreeStatus(false)
+TcpServerMessageHandler -> CellRepository : save(newCell)
+TcpServerMessageHandler->TcpServerMessageHandler: timeStamp = Date.from(Instant.now());
+TcpServerMessageHandler->PostItHistoryBuilder : create()
+TcpServerMessageHandler->PostItHistoryBuilder : withPostIt(postit)
+TcpServerMessageHandler->PostItHistoryBuilder : withTimeStamp(timeStamp)
+TcpServerMessageHandler->PostItHistoryBuilder : withOldContent(postit.content())
+TcpServerMessageHandler->PostItHistoryBuilder : withOldCell(oldCell)
+TcpServerMessageHandler->PostItHistoryBuilder : withNewContent(postit.content())
+TcpServerMessageHandler->PostItHistoryBuilder : withNewCell(newCell))
+TcpServerMessageHandler->PostItHistoryBuilder : build()
+
+TcpServerMessageHandler->PostItHistoryRepository: save(postItHistory)
+TcpServerMessageHandler->PostIt: postit.changeCell(newCell)
+TcpServerMessageHandler->Cell: oldCell.changeTheFreeStatus(true)
+TcpServerMessageHandler->CellRepository: save(oldCell)
+TcpServerMessageHandler->PostItRepository: save(postit)
+end
+else if option is change content
+UI-->Actor: Asks to insert content
+Actor->UI: Inserts content
+UI->CTRL: changeContentOfPostIt(postit, content)
+     note right of CTRL: request is created with the \nclass RequestMessage using \ncode CHANGE_POSTIT_CONTENT(15)\n pass by parameter postit and content
+     CTRL-> TcpServerMessageHandler: send(request)
+     TcpServerMessageHandler->CellRepository: findCell(oldRow, oldContent)
+     activate CellRepository
+     CellRepository-->TcpServerMessageHandler:returns oldCell
+     deactivate CellRepository
+     TcpServerMessageHandler->PostItRepository: findPostIt(oldRow, oldContent)
+     activate PostItRepository
+     PostItRepository-->TcpServerMessageHandler:returns postit
+     deactivate PostItRepository
+     alt if postit is not null
+     TcpServerMessageHandler->TcpServerMessageHandler: timeStamp = Date.from(Instant.now());
+     TcpServerMessageHandler->PostItHistoryBuilder : create()
+     TcpServerMessageHandler->PostItHistoryBuilder : withPostIt(postit)
+     TcpServerMessageHandler->PostItHistoryBuilder : withTimeStamp(timeStamp)
+     TcpServerMessageHandler->PostItHistoryBuilder : withOldContent(oldContent)
+     TcpServerMessageHandler->PostItHistoryBuilder : withOldCell(postit.cell())
+     TcpServerMessageHandler->PostItHistoryBuilder : withNewContent(newContent)
+     TcpServerMessageHandler->PostItHistoryBuilder : withNewCell(postit.cell()))
+     TcpServerMessageHandler->PostItHistoryBuilder : build()
+     TcpServerMessageHandler->PostItHistoryRepository: save(postItHistory)
+     TcpServerMessageHandler->PostIt: changeContent(newContent)
+     TcpServerMessageHandler->PostItRepository: save(postit)
+     end
+end
+  note right of CTRL: response is created with the \nclass RequestMessage using \ncode ACK(2) if success and \nERR(3) if error
+TcpServerMessageHandler-->CTRL: send(response)
+CTRL->UI: send(response)
+UI--> Actor: informs operation success
+
+deactivate Actor
+
+@enduml

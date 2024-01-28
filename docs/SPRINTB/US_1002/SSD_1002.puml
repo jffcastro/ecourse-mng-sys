@@ -1,0 +1,16 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+Manager -> System: Authentication Request
+System --> Manager: Authentication Response
+
+Manager -> System: Wants to create a course
+System --> Manager :Asks course information
+
+System <- Manager: courseCode, courseName, description \n minStudents, maxStudents
+
+System --> Manager:
+
+@enduml

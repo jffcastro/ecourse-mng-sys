@@ -1,0 +1,23 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor Teacher as Teacher
+
+activate Teacher
+
+Teacher -> System: Asks the list of courses that the teacher teaches
+activate System
+System --> Teacher : Shows list of courses that the teacher teaches
+deactivate System
+Teacher -> System: Selects a course from the list
+activate System
+System --> Teacher: Returns the list with all exams in that course \n and shows operation succes
+deactivate System
+
+deactivate Teacher
+@enduml

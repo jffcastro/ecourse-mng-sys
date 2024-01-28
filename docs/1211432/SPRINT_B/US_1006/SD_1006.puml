@@ -1,0 +1,58 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+autonumber
+
+actor USER as Actor
+participant listAvailableCoursesUI as UI <<presentation>>
+
+
+Actor -> UI : list available courses to me
+activate UI
+    create control listAvailableCoursesController
+    UI -> listAvailableCoursesController : create()
+    UI -> listAvailableCoursesController : listCoursesAvailableForUser(User)
+
+    activate listAvailableCoursesController
+    participant "theUser: user" as USER <<domain>>
+    database CourseRepository as Repository <<repository>>
+
+    listAvailableCoursesController -> USER : getUserRole()
+    USER --> listAvailableCoursesController
+
+    alt if userRole == 'Manager':
+        listAvailableCoursesController -> Repository : findAll()
+        activate Repository
+            Repository --> listAvailableCoursesController
+        deactivate Repository
+    end
+
+    alt if userRole == 'Teacher':
+        listAvailableCoursesController -> Repository : findCoursesListForTeacher(user)
+        activate Repository
+        Repository --> listAvailableCoursesController
+        deactivate Repository
+    end
+
+    alt if userRole == 'Student':
+            listAvailableCoursesController -> Repository : findCoursesListForStudent(user)
+            activate Repository
+            Repository --> listAvailableCoursesController
+            deactivate Repository
+    end
+
+    listAvailableCoursesController --> UI :
+    deactivate listAvailableCoursesController
+
+
+
+    UI -> UI: output Courses List for User
+    UI -->  Actor
+
+
+@enduml
+

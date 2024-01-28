@@ -1,0 +1,78 @@
+@startuml
+
+actor User
+User -> SharedBoardClient: wants to view, in real time \nthe updates in a shared board
+    activate SharedBoardClient
+        SharedBoardClient -> SharedBoardClient: sOut = new DataOutputStream(socket.getOutputStream())
+        SharedBoardClient -> SharedBoardClient: sIn = new DataInputStream(socket.getInputStream())
+        SharedBoardClient -> BrowserThread: new Thread(new BrowserThread.start())
+        activate BrowserThread
+            BrowserThread -> BrowserThread: serverHTTP = new ServerSocket(port)
+            loop
+                BrowserThread -> BrowserThread: Socket socket = serverHTTP.accept()
+                BrowserThread -> BrowserThread: HTTPMessage request = new HTTPMessage(inS)
+                BrowserThread -> BrowserThread: HTTPMessage response = new HTTPMessage()
+                alt if request.getMethod() == GET
+                    BrowserThread -> SharedBoardClientController**: create()
+                    alt if SharedBoardClient.username == null
+                        BrowserThread -> BrowserThread: response.setContentFromString(login.html)
+                        BrowserThread -> BrowserThread: response.setResponseStatus("405 Method Not Allowed")
+                        else if request.getURI.startsWith("/sharedBoards")
+                            BrowserThread -> SharedBoardClientController: listSharedBoards(user)
+                            activate SharedBoardClientController
+                                note right of SharedBoardClientController: request is created with the \nclass RequestMessage using \ncode ALL_BOARDS(20)\n pass by parameter user
+                                SharedBoardClientController -> TcpServerMessageHandler: send(request)
+                                activate TcpServerMessageHandler
+                                    TcpServerMessageHandler -> UserRepository: user = findById(username)
+                                    activate UserRepository
+                                        UserRepository --> TcpServerMessageHandler: returns SystemUser
+                                    deactivate UserRepository
+                                    TcpServerMessageHandler -> SharedBoardInvitationRepository: sharedBoardListInvited = findSharedBoardsUserWasInvite(user)
+                                    activate SharedBoardInvitationRepository
+                                        SharedBoardInvitationRepository --> TcpServerMessageHandler: returns List<SharedBoardInvitation>
+                                    deactivate SharedBoardInvitationRepository
+
+                                    TcpServerMessageHandler -> SharedBoardRepository: availableSharedBoards = findSharedBoardOfUser(user)
+                                    activate SharedBoardRepository
+                                        SharedBoardRepository --> TcpServerMessageHandler: returns List<SharedBoard>
+                                    deactivate SharedBoardRepository
+                                    TcpServerMessageHandler --> TcpServerMessageHandler: availableSharedBoards.addAll(sharedBoardListInvited)
+                                    alt if(!availableSharedBoards.isEmpty)
+                                        alt for (SharedBoard list : availableSharedBoards)
+                                            TcpServerMessageHandler -> TcpServerMessageHandler: sharedBoards += list.title()
+                                        end
+                                    end
+                                    TcpServerMessageHandler --> SharedBoardClientController: send(response)
+                                    note right of SharedBoardClientController: response is created with the \nclass RequestMessage using \ncode SEND_MESSAGE(6) pass \nby parameter String \navailableSharedBoards
+                                deactivate TcpServerMessageHandler
+                                note right of BrowserThread: when we receive the list of shared boards, \nwe transform it in an html page
+                                SharedBoardClientController -> BrowserThread: returns html string
+                            deactivate SharedBoardClientController
+                            BrowserThread -> BrowserThread: response.setContentFromString(html, "text/html)"
+                            BrowserThread -> BrowserThread: response.setResponseStatus("200 Ok")
+                        else if request.getURI.startsWith("/sharedBoard/")
+                            BrowserThread -> SharedBoardClientController: findMySharedBoardInfo(sharedBoardTitle)
+                            activate SharedBoardClientController
+                                note right of SharedBoardClientController: request is created with the \nclass RequestMessage using \ncode FIND_MYSHAREDBOARD(19)\n pass by parameter sharedBoard
+                                SharedBoardClientController -> TcpServerMessageHandler: send(request)
+                                activate TcpServerMessageHandler
+                                    TcpServerMessageHandler -> SharedBoardRepository: sharedBoard = findSharedBoard(sharedBoard)
+                                    activate SharedBoardRepository
+                                        SharedBoardRepository --> TcpServerMessageHandler: returns SharedBoard
+                                    deactivate SharedBoardRepository
+                                    note right of TcpServerMessageHandler: Here is created the html page that will \nbe returned containing all the information of \nthe selected shared board
+                                    note right of SharedBoardClientController: response is created with the \nclass RequestMessage using \ncode SEND_MESSAGE(6) pass \nby parameter String html
+                                    TcpServerMessageHandler --> SharedBoardClientController: send(response)
+                                deactivate TcpServerMessageHandler
+
+                                SharedBoardClientController --> BrowserThread: returns html1 string
+                            deactivate SharedBoardClientController
+                            BrowserThread -> BrowserThread: response.setContentFromString(html1, "text/html)"
+                            BrowserThread -> BrowserThread: response.setResponseStatus("200 Ok")
+                        end
+                    end
+                end
+        BrowserThread -> BrowserThread: response.send(outS)
+        BrowserThread --> SharedBoardClient: data
+        SharedBoardClient --> User: Display info
+@enduml

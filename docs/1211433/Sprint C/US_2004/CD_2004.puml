@@ -1,0 +1,92 @@
+@startuml
+
+class TakeExamUI <<UI>> {
+}
+
+class TakeExamController <<Controller>> {
+    + Iterable <Exam> : findExamsAvailableForStudentToTake()
+    + Iterable <Exam> : saveStudentGradeInExam(exam, grade)
+    + Iterable <Exam> : findExamsWithExamsIds(examsIDs)
+}
+
+class CommonTakeExamUI <<UI>> {
+    + Grade : takeExam(exam)
+    + Grade : takeManualExam(exam)
+    + Grade : takeExamByFile(exam)
+    + String : askForStudentAnswer(question)
+    + String : askfForMatchingAnswer()
+    + String : askfForMissingWordAnswer()
+    + String : askfForMultipleChoiceAnswer()
+    + String : askfForShortAnswer()
+    + String : askfForNumericAnswer()
+    + String : askfForTrueOrFalseAnswer()
+}
+
+class CommonTakeExamController <<Controller>> {
+    + File : importFile(path)
+    + boolean : correctQuestion(question, answer)
+    + Grade : correctExamByFile(exam, file)
+}
+
+class CommonTakeExamService <<Service>> {
+    + File : importFile(path)
+    + boolean : correctQuestion(question, answer)
+    + Grade : correctExamByFile(exam, file)
+}
+
+class TakeExamEvalVisitor << Visitor>> {
+    + Grade : correctExam(tree, exam)
+}
+
+class Exam <<Domain>> {
+    - Long : examID
+    - Course : course
+    - String : description
+    - Date : openDate
+    - Date : closeDate
+    - Language : language
+    - Header : header
+    - Structure : structure
+    - ExamStatus : ExamStatus
+}
+
+class ExamEnrollment <<Domain>> {
+    - Long : examEnrollmentID
+    - Enrollment : enrollment
+    - Grade : examGrade
+    - ExamEnrollmentStatus : examEnrollmentStatus
+    + void : changeExamGrade(grade)
+    + void : changeExamEnrollmentStatusToPresent()
+}
+
+class Grade <<Grade>> {
+    - Float : grade
+}
+
+class ExamRepository {
+    + Exam : findById(examId)
+}
+
+class ExamEnrollmentRepository {
+    + Iterable<Exam> : findIdsOfExamAvailableForStudentToTake(exam)
+    + void: save(examEnrollment)
+}
+
+TakeExamUI ..> TakeExamController
+TakeExamUI ..> CommonTakeExamUI
+CommonTakeExamUI ..>  CommonTakeExamController
+CommonTakeExamUI ..>  CommonTakeExamService
+CommonTakeExamService --> TakeExamEvalVisitor
+TakeExamEvalVisitor --> Exam : corrects >
+TakeExamEvalVisitor --> Grade : generates >
+Exam --> Grade : has >
+TakeExamController --> ExamEnrollmentRepository
+TakeExamController -> ExamEnrollment : finds >
+ExamEnrollmentRepository --> ExamEnrollment : contains >
+TakeExamController --> ExamRepository
+TakeExamController -> Exam : finds >
+ExamRepository --> Exam : contains >
+
+
+
+@enduml

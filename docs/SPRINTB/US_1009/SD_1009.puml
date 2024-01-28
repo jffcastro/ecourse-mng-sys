@@ -1,0 +1,46 @@
+@startuml
+'http://plantuml.com/skinparam.html
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+autonumber
+
+actor Manager as Actor
+participant AcceptRejectEnrollmentRequestUI as UI <<presentation>>
+control AcceptRejectEnrollmentRequestController as Controller <<application>>
+database EnrollmentRepository as EnrollmentRepository <<repository>>
+entity Enrollment as Enrollment <<Domain>>
+
+Actor -> UI: asks to accept/reject enrollment requests
+activate UI
+    UI -> Controller : findEnrollmentRequests()
+    activate Controller
+        Controller -> EnrollmentRepository : findEnrollmentRequests
+        activate EnrollmentRepository
+            EnrollmentRepository --> Controller
+         deactivate EnrollmentRepository
+        Controller --> UI
+    deactivate Controller
+    UI --> Actor: shows enrollment requests list\nasks to choose enrollment request
+    Actor -> UI: chooses enrollment request
+    UI --> Actor : asks to accept/reject enrollment request
+    Actor -> UI : accept/reject enrollment request
+    alt if option is accept
+        UI -> Controller : acceptEnrollment(enrollment)
+        activate Controller
+            Controller -> Enrollment : accept()
+            Controller -> EnrollmentRepository : save(enrollment)
+        deactivate Controller
+    else if option is reject
+        UI -> Controller : rejectEnrollment(enrollment)
+        activate Controller
+            Controller -> Enrollment : reject()
+            Controller -> EnrollmentRepository : save(enrollment)
+        deactivate Controller
+    end
+
+    UI --> Actor : informs about operation success
+deactivate UI
+
+@enduml
